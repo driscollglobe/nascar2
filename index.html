@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>The Lineup — Cross-Era (Mode Two) prototype</title>
+<title>The Lineup — NASCAR Games</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -208,6 +208,92 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .sweep .verdict-line.tense { border-color: var(--green); }
 .sweep .verdict-line.trivial { border-color: var(--red); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* ---------------- games hub ---------------- */
+.hub-lede { color: var(--muted); font-size: 14.5px; margin: 8px 0 2px; }
+.hub-cards { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.gamecard {
+  text-align: left; background: linear-gradient(180deg, var(--panel2), var(--panel));
+  border: 1px solid var(--line2); border-radius: var(--radius); padding: 16px;
+  cursor: pointer; font-family: var(--body); color: var(--text); width: 100%;
+  transition: transform 120ms var(--ease), border-color 120ms;
+  -webkit-tap-highlight-color: transparent;
+}
+.gamecard:active { transform: translateY(1px) scale(0.995); }
+.gamecard.primary { border-color: var(--amber); background: linear-gradient(180deg, rgba(242, 229, 0, 0.10), var(--panel)); }
+.gamecard.soon { opacity: 0.55; cursor: default; }
+.gamecard .gc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.gamecard .gc-title { font-family: var(--display); font-weight: 700; text-transform: uppercase; font-size: 26px; line-height: 1; }
+.gamecard .gc-desc { color: var(--muted); font-size: 14px; margin-top: 6px; line-height: 1.45; }
+.gamecard .gc-stat { font-family: var(--display); font-weight: 600; font-size: 13px; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 8px; }
+
+/* ---------------- daily grid ---------------- */
+.ggrid { display: grid; grid-template-columns: minmax(64px, 88px) repeat(3, 1fr); gap: 6px; margin: 10px 0 6px; }
+.ghead {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  font-family: var(--display); font-weight: 600; font-size: 12.5px; line-height: 1.15;
+  text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); padding: 6px 2px; min-height: 44px;
+}
+.ghead.rowhead { text-align: left; justify-content: flex-start; padding-left: 2px; }
+.gcell {
+  aspect-ratio: 1 / 1; min-height: 72px; border: 1px solid var(--line2); border-radius: var(--radius-sm);
+  background: var(--panel2); cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px; padding: 4px; color: var(--text);
+  font-family: var(--body); -webkit-tap-highlight-color: transparent;
+}
+.gcell.sel { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(63, 216, 226, 0.25); }
+.gcell.ok { border-color: var(--green); background: rgba(55, 217, 154, 0.10); cursor: default; }
+.gcell.dead { opacity: 0.45; cursor: default; }
+.gcell .gc-nm { font-family: var(--display); font-weight: 700; font-size: 14.5px; line-height: 1.05; text-align: center; }
+.gcell .gc-r { font-size: 11px; color: var(--muted); }
+.gc-plus { font-family: var(--display); font-weight: 700; font-size: 26px; color: var(--faint); }
+.gstatus { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 0; }
+.gpanel { background: var(--panel); border: 1px solid var(--line2); border-radius: var(--radius); padding: 14px; margin: 8px 0; }
+.gpanel .gp-clues { font-family: var(--display); font-weight: 700; font-size: 19px; line-height: 1.25; text-transform: uppercase; }
+.gpanel .gp-x { color: var(--amber); padding: 0 6px; }
+.ginput {
+  width: 100%; margin-top: 10px; font-size: 18px; padding: 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font-family: var(--body);
+}
+.ginput:focus { outline: 2px solid var(--cyan); }
+.gsug { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.gsug button {
+  text-align: left; font-size: 16px; padding: 13px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--line); background: var(--raised); color: var(--text); cursor: pointer; font-family: var(--body);
+  -webkit-tap-highlight-color: transparent;
+}
+.gsug button .yrs { color: var(--muted); font-size: 13px; }
+.gfeed { margin: 8px 0; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--line2); background: var(--panel); font-size: 14.5px; line-height: 1.45; }
+.gfeed.good { border-color: var(--green); }
+.gfeed.bad { border-color: var(--red); }
+.sharebox {
+  white-space: pre-wrap; font-family: var(--body); font-size: 14px; background: var(--panel2);
+  border: 1px solid var(--line2); border-radius: var(--radius-sm); padding: 12px; margin: 10px 0;
+  user-select: text; -webkit-user-select: text; line-height: 1.5;
+}
+
+/* ---------------- streak ---------------- */
+.duelq { font-family: var(--display); font-weight: 700; font-size: 30px; text-align: center; margin: 14px 0 2px; line-height: 1; text-transform: uppercase; }
+.duelsub { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+.duel { display: flex; flex-direction: column; gap: 12px; }
+.vsline { text-align: center; font-family: var(--display); font-weight: 700; color: var(--faint); font-size: 15px; }
+.duelcard {
+  position: relative; text-align: left; width: 100%;
+  background: linear-gradient(180deg, var(--raised), var(--panel2));
+  border: 1px solid var(--line2); border-radius: var(--radius); padding: 20px 96px 20px 16px;
+  cursor: pointer; color: var(--text); font-family: var(--body);
+  -webkit-tap-highlight-color: transparent;
+}
+.duelcard:active { transform: translateY(1px); }
+.duelcard .dc-nm { font-family: var(--display); font-weight: 700; font-size: 30px; line-height: 1; }
+.duelcard .dc-yr { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.duelcard .dc-w { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-family: var(--display); font-weight: 700; font-size: 40px; }
+.duelcard.right { border-color: var(--green); }
+.duelcard.right .dc-w { color: var(--green); }
+.duelcard.wrong { border-color: var(--red); }
+.duelcard.wrong .dc-w { color: var(--red); }
+.streakbar { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 0; }
+.streakbar .sb-n { font-family: var(--display); font-weight: 700; font-size: 44px; color: var(--amber); line-height: 1; }
 </style>
 </head>
 <body>
@@ -796,16 +882,15 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
   function topbar() {
     return el("header", { class: "topbar" }, [
       el("div", { class: "brand" }, [
-        el("span", { class: "wordmark", text: "THE LINEUP" }),
-        el("span", { class: "dot display", text: "●" }),
-        el("span", { class: "mode", text: "Cross-Era" }),
+        el("button", { class: "btn ghost", style: "padding:7px 11px;font-size:14px", text: "‹ Games", onClick: function () { detachKeys(); if (window.__HUB__) window.__HUB__.home(); } }),
+        el("span", { class: "wordmark", text: "CROSS-ERA DRAFT" }),
       ]),
-      el("span", { class: "muted", style: "font-size:11px;letter-spacing:.08em;text-transform:uppercase", text: "Mode Two · prototype" }),
+      el("span", { class: "era-tag", text: "Archive" }),
     ]);
   }
   function footer() {
     return el("footer", { class: "foot" }, [
-      el("div", { text: "Cross-era feel test. Real NASCAR data from Motorsport Stats. Throwaway prototype — not the daily." }),
+      el("div", { text: "Archive mode. Real team results from Motorsport Stats." }),
     ]);
   }
   function setScreen() {
@@ -854,7 +939,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
         el("div", { class: "wordmark display", style: "font-size:20px", text: "Cross-Era matchup" }),
         el("span", { class: "era-tag", text: "All eras" }),
       ]),
-      el("div", { class: "lede", text: "Build a Cup team to beat this real team's win total — but your cards come from ANY season since 1983, not just theirs. Draft '98 Gordon and '14 Harvick against a 2021 benchmark. " + passes + " " + (passes === 1 ? "pass" : "passes") + ", tiers hidden until you decide." }),
+      el("div", { class: "lede", text: "Build a lineup from NASCAR history and beat a real team's season. Sign or pass one driver at a time — any season since 1983. " + passes + " " + (passes === 1 ? "pass" : "passes") + ". A famous name in a down year is a trap." }),
       benchmarkHero(os),
       el("button", { class: "btn primary", style: "margin-top:14px", text: "Play matchup", onClick: function () { startRun(); } }),
       el("div", { class: "actions", style: "margin-top:10px" }, [
@@ -1043,7 +1128,734 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
   window.__CROSSERA__ = { runSweep: runSweep, buildCrossEraRun: buildCrossEraRun, fameOf: fameOf, ORG_SEASONS: ORG_SEASONS, POOL: POOL };
 
   App.root = document.getElementById("app");
-  newMatchup();
+  // Owned by the games hub now: no auto-launch. The hub calls enter().
+  window.__CROSSERA_MODE__ = {
+    enter: function () { App.orgSeason = null; newMatchup(); },
+    leave: function () { detachKeys(); },
+  };
+})();
+</script>
+
+<script>
+(function () {
+"use strict";
+
+/* =========================================================================
+   The Lineup — NASCAR games hub.
+
+   Home is a hub of modes, not one game:
+     DAILY GRID   3x3 knowledge grid, one puzzle per day, rarity scoring.
+     STREAK       endless "who had more Cup wins?" higher/lower.
+     CROSS-ERA    the existing draft prototype, kept as archive mode.
+     PAINT BOOTH  coming soon (needs image rights + content workflow).
+     RACE PICKS   coming soon (the future race-weekend hook).
+
+   Grid + Streak run on a hand-seeded driver dataset below (50 drivers).
+   It is a SEED — enough to make the games playable, not editorial-grade.
+   Every fact in it needs a pass against Motorsport Stats before launch.
+   ========================================================================= */
+
+var $app = document.getElementById("app");
+var DEV = /[?&]dev=1/.test(location.search);
+var LS = {
+  grid: "lineupHub:grid:",            // + date key
+  streakBest: "lineupHub:streakBest",
+  streakToday: "lineupHub:streakToday:", // + date key
+  lastMode: "lineupHub:lastMode",
+};
+var EPOCH = new Date(2026, 6, 6); // Grid #1
+
+/* ---------------- tiny helpers (same shapes as the draft engine) ---------------- */
+function hashString(str) {
+  var h = 2166136261 >>> 0;
+  for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function mulberry32(seed) {
+  var a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function rngFromSeed(s) { return mulberry32(hashString(s)); }
+function shuffle(arr, rng) {
+  var out = arr.slice();
+  for (var i = out.length - 1; i > 0; i--) {
+    var j = Math.floor(rng() * (i + 1));
+    var tmp = out[i]; out[i] = out[j]; out[j] = tmp;
+  }
+  return out;
+}
+function el(tag, props, children) {
+  props = props || {}; children = children == null ? [] : children;
+  var node = document.createElement(tag);
+  for (var k in props) {
+    var v = props[k];
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "class") node.className = v;
+    else if (k === "html") node.innerHTML = v;
+    else if (k === "text") node.textContent = v;
+    else if (k.indexOf("on") === 0 && typeof v === "function") node.addEventListener(k.slice(2).toLowerCase(), v);
+    else node.setAttribute(k, v);
+  }
+  var kids = Array.isArray(children) ? children : [children];
+  for (var i = 0; i < kids.length; i++) {
+    var c = kids[i];
+    if (c === null || c === undefined || c === false) continue;
+    node.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  }
+  return node;
+}
+function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); return node; }
+function mount(parent) {
+  for (var i = 1; i < arguments.length; i++) if (arguments[i]) parent.appendChild(arguments[i]);
+  return parent;
+}
+function dateKey() {
+  var d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function gridNumber() {
+  var now = new Date(); now.setHours(0, 0, 0, 0);
+  return Math.max(1, Math.round((now - EPOCH) / 86400000) + 1);
+}
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function copyText(text, btn) {
+  var done = function () {
+    var old = btn.textContent;
+    btn.textContent = "Copied";
+    setTimeout(function () { btn.textContent = old; }, 1400);
+  };
+  var fallback = function () {
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "absolute"; ta.style.left = "-9999px";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta); done();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, fallback);
+  } else fallback();
+}
+
+/* =========================================================================
+   Seed driver dataset. 50 drivers, facts hand-entered. n name, a aliases,
+   t teams (clue vocab ids), mk manufacturers, no car numbers (strings,
+   exact match), w career Cup wins (through 2025, approximate for actives),
+   c Cup titles, tr tracks won at (clue vocab), wd decades with a Cup win,
+   y0/y1 first/last Cup season (0 = active), sp sponsors, r base rarity %.
+   ========================================================================= */
+function D(n, a, t, mk, no, w, c, tr, wd, y0, y1, sp, r) {
+  return { n: n, a: a, t: t, mk: mk, no: no, w: w, c: c, tr: tr, wd: wd, y0: y0, y1: y1 || 9999, sp: sp, r: r };
+}
+var DRIVERS = [
+  D("Richard Petty", ["the king", "king richard"], ["pettyent"], ["plymouth", "dodge", "chevy", "pontiac", "ford"], ["43"], 200, 7, ["daytona", "darlington", "martinsville", "rockingham", "northwilkesboro", "bristol", "talladega"], [1960, 1970, 1980], 1958, 1992, ["STP"], 50),
+  D("Dale Earnhardt", ["dale sr", "earnhardt sr", "the intimidator", "big e", "ironhead", "senior"], ["rcr"], ["chevy", "ford"], ["3", "2", "15"], 76, 7, ["daytona", "bristol", "darlington", "talladega", "martinsville", "rockingham", "northwilkesboro", "indy"], [1970, 1980, 1990, 2000], 1975, 2001, ["GM Goodwrench", "Wrangler"], 58),
+  D("Dale Earnhardt Jr.", ["dale jr", "junior", "little e", "june bug"], ["dei", "hendrick"], ["chevy"], ["8", "88"], 26, 0, ["daytona", "talladega", "bristol", "martinsville"], [2000, 2010], 1999, 2017, ["Budweiser", "National Guard", "Nationwide"], 48),
+  D("Jeff Gordon", ["rainbow warrior", "wonder boy"], ["hendrick"], ["chevy"], ["24"], 93, 4, ["daytona", "bristol", "darlington", "talladega", "martinsville", "rockingham", "northwilkesboro", "watkinsglen", "indy"], [1990, 2000, 2010], 1992, 2016, ["DuPont", "Axalta", "Pepsi"], 55),
+  D("Jimmie Johnson", ["jimmy johnson", "jj", "seven time"], ["hendrick"], ["chevy"], ["48"], 83, 7, ["daytona", "bristol", "darlington", "talladega", "martinsville", "indy"], [2000, 2010], 2001, 2023, ["Lowe's", "Kobalt", "Ally"], 50),
+  D("Mark Martin", [], ["roush", "hendrick", "dei"], ["ford", "chevy"], ["6", "5", "8", "01", "55"], 40, 0, ["bristol", "darlington", "talladega", "rockingham", "watkinsglen"], [1980, 1990, 2000], 1981, 2013, ["Valvoline", "Viagra", "U.S. Army", "GoDaddy"], 22),
+  D("Rusty Wallace", [], ["penske"], ["ford", "pontiac", "dodge"], ["2", "27"], 55, 1, ["bristol", "martinsville", "rockingham", "northwilkesboro", "watkinsglen"], [1980, 1990, 2000], 1980, 2005, ["Miller Lite", "Miller Genuine Draft", "Kodiak"], 26),
+  D("Tony Stewart", ["smoke"], ["gibbs", "shr"], ["pontiac", "chevy"], ["20", "14"], 49, 3, ["daytona", "bristol", "talladega", "martinsville", "watkinsglen", "indy"], [1990, 2000, 2010], 1999, 2016, ["Home Depot", "Office Depot", "Mobil 1", "Bass Pro Shops"], 35),
+  D("Darrell Waltrip", ["dw", "jaws"], ["juniorjohnson", "hendrick"], ["chevy", "buick"], ["11", "17", "88"], 84, 3, ["daytona", "bristol", "darlington", "talladega", "martinsville", "rockingham", "northwilkesboro"], [1970, 1980, 1990], 1972, 2000, ["Mountain Dew", "Budweiser", "Tide", "Western Auto"], 30),
+  D("Bill Elliott", ["awesome bill", "million dollar bill", "awesome bill from dawsonville"], ["juniorjohnson"], ["ford", "dodge"], ["9", "11", "94"], 44, 1, ["daytona", "talladega", "darlington", "indy"], [1980, 1990, 2000], 1976, 2012, ["Coors", "Budweiser", "McDonald's", "Dodge Dealers"], 24),
+  D("Bobby Labonte", [], ["gibbs", "pettyent"], ["chevy", "pontiac", "dodge", "toyota"], ["18", "43", "47"], 21, 1, ["rockingham", "indy"], [1990, 2000], 1991, 2016, ["Interstate Batteries", "Cheerios"], 15),
+  D("Terry Labonte", ["texas terry", "the iceman", "iceman"], ["juniorjohnson", "hendrick"], ["chevy", "ford", "olds"], ["44", "11", "5"], 22, 2, ["darlington", "bristol"], [1980, 1990, 2000], 1978, 2014, ["Kellogg's", "Piedmont Airlines", "Budweiser"], 14),
+  D("Kyle Petty", [], ["pettyent", "wood"], ["ford", "pontiac", "dodge"], ["21", "42", "44", "45"], 8, 0, ["rockingham", "watkinsglen"], [1980, 1990], 1979, 2008, ["Mello Yello", "Coors Light", "7-Eleven", "Hot Wheels"], 8),
+  D("Kyle Busch", ["rowdy", "kfb"], ["hendrick", "gibbs", "rcr"], ["chevy", "toyota"], ["5", "18", "8"], 63, 2, ["daytona", "bristol", "darlington", "talladega", "martinsville", "watkinsglen", "indy"], [2000, 2010, 2020], 2004, 0, ["M&M's", "Interstate Batteries", "Skittles"], 42),
+  D("Kurt Busch", [], ["roush", "penske", "shr", "ganassi"], ["ford", "dodge", "chevy", "toyota"], ["97", "2", "41", "1", "45"], 34, 1, ["bristol", "daytona", "martinsville"], [2000, 2010, 2020], 2000, 2022, ["Rubbermaid", "Sharpie", "Miller Lite", "Monster Energy"], 18),
+  D("Kevin Harvick", ["happy", "the closer", "happy harvick"], ["rcr", "shr"], ["chevy", "ford"], ["29", "4"], 60, 1, ["daytona", "bristol", "darlington", "talladega", "indy"], [2000, 2010, 2020], 2001, 2023, ["GM Goodwrench", "Shell-Pennzoil", "Budweiser", "Busch Light"], 40),
+  D("Matt Kenseth", [], ["roush", "gibbs"], ["ford", "toyota", "chevy"], ["17", "20", "42"], 39, 1, ["daytona", "bristol", "darlington", "talladega", "rockingham"], [2000, 2010], 1998, 2020, ["DeWalt", "Dollar General"], 20),
+  D("Carl Edwards", ["cousin carl"], ["roush", "gibbs"], ["ford", "toyota"], ["99", "19"], 28, 0, ["bristol", "darlington"], [2000, 2010], 2004, 2016, ["Office Depot", "AFLAC", "Scotts", "Arris"], 18),
+  D("Denny Hamlin", [], ["gibbs"], ["chevy", "toyota"], ["11"], 60, 0, ["daytona", "bristol", "darlington", "talladega", "martinsville", "watkinsglen"], [2000, 2010, 2020], 2005, 0, ["FedEx"], 38),
+  D("Joey Logano", ["sliced bread"], ["gibbs", "penske"], ["toyota", "ford"], ["20", "22"], 37, 3, ["daytona", "bristol", "talladega", "martinsville", "watkinsglen"], [2000, 2010, 2020], 2008, 0, ["Home Depot", "Shell-Pennzoil", "AAA"], 33),
+  D("Brad Keselowski", ["bad brad"], ["penske", "roush"], ["chevy", "dodge", "ford"], ["09", "12", "2", "6"], 36, 1, ["daytona", "bristol", "darlington", "talladega", "martinsville"], [2000, 2010, 2020], 2008, 0, ["Miller Lite", "Castrol"], 22),
+  D("Ryan Newman", ["rocket man"], ["penske", "shr", "rcr", "roush"], ["ford", "dodge", "chevy"], ["12", "39", "31", "6"], 18, 0, ["daytona", "indy"], [2000, 2010], 2000, 2021, ["Alltel", "U.S. Army", "Caterpillar"], 9),
+  D("Ricky Rudd", [], ["rcr", "hendrick", "yates", "wood"], ["chevy", "ford"], ["3", "15", "26", "5", "10", "28", "21"], 23, 0, ["martinsville", "indy"], [1980, 1990, 2000], 1975, 2007, ["Tide", "Havoline", "Texaco", "Motorcraft", "Quaker State"], 12),
+  D("Sterling Marlin", [], ["juniorjohnson", "ganassi"], ["chevy", "ford", "dodge"], ["44", "22", "8", "4", "40"], 10, 0, ["daytona", "talladega"], [1990, 2000], 1976, 2009, ["Kodak", "Coors Light", "Maxwell House"], 7),
+  D("Bobby Allison", [], ["juniorjohnson"], ["chevy", "ford", "buick", "mercury"], ["12", "22", "15"], 85, 1, ["daytona", "talladega", "darlington", "bristol", "rockingham", "northwilkesboro"], [1960, 1970, 1980], 1961, 1988, ["Miller High Life", "Coca-Cola"], 11),
+  D("Davey Allison", [], ["yates"], ["ford"], ["28"], 19, 0, ["daytona", "talladega"], [1980, 1990], 1985, 1993, ["Havoline", "Texaco"], 9),
+  D("Dale Jarrett", ["dj"], ["wood", "gibbs", "yates"], ["ford", "chevy", "toyota"], ["21", "18", "28", "88", "44"], 32, 1, ["daytona", "talladega", "darlington", "indy"], [1990, 2000], 1984, 2008, ["Interstate Batteries", "Quality Care", "UPS"], 16),
+  D("Ernie Irvan", ["swervin irvan"], ["yates"], ["chevy", "ford", "pontiac"], ["4", "28", "36"], 15, 0, ["daytona", "bristol", "talladega"], [1990], 1987, 1999, ["Kodak", "Havoline", "M&M's"], 6),
+  D("Geoff Bodine", [], ["hendrick", "juniorjohnson"], ["chevy", "ford"], ["5", "11", "15", "7"], 18, 0, ["daytona", "martinsville", "watkinsglen"], [1980, 1990], 1979, 2004, ["Levi Garrett", "Budweiser", "Exide", "QVC"], 4),
+  D("Brett Bodine", [], ["juniorjohnson"], ["buick", "ford"], ["26", "11"], 1, 0, ["northwilkesboro"], [1990], 1986, 2003, ["Quaker State", "Lowe's"], 2),
+  D("Todd Bodine", [], [], ["ford", "chevy"], ["75"], 0, 0, [], [], 1992, 2011, [], 1),
+  D("Harry Gant", ["handsome harry", "mr september"], [], ["chevy", "buick", "olds"], ["33"], 18, 0, ["darlington", "martinsville"], [1980, 1990], 1973, 1994, ["Skoal Bandit", "Skoal"], 6),
+  D("Jimmy Spencer", ["mr excitement"], ["juniorjohnson", "ganassi"], ["ford", "chevy", "dodge"], ["27", "23", "41"], 2, 0, ["daytona", "talladega"], [1990], 1989, 2006, ["McDonald's", "Smokin' Joe's", "Target"], 4),
+  D("Ken Schrader", [], ["hendrick", "wood"], ["chevy", "ford", "dodge"], ["25", "90", "33", "21", "49"], 4, 0, ["talladega"], [1980, 1990], 1984, 2013, ["Folgers", "Budweiser", "Kodiak", "Little Debbie", "Red Baron"], 5),
+  D("Ward Burton", [], [], ["pontiac", "dodge", "chevy"], ["22"], 5, 0, ["daytona", "darlington", "rockingham"], [1990, 2000], 1994, 2007, ["Caterpillar"], 4),
+  D("Jeff Burton", ["the mayor"], ["roush", "rcr"], ["ford", "chevy"], ["99", "31"], 21, 0, ["darlington", "bristol"], [1990, 2000], 1993, 2014, ["Exide", "Citgo", "Cingular", "AT&T", "Caterpillar"], 13),
+  D("Michael Waltrip", ["mikey"], ["dei", "wood"], ["pontiac", "ford", "chevy", "toyota"], ["30", "21", "15", "55"], 4, 0, ["daytona", "talladega"], [2000], 1985, 2017, ["NAPA", "Citgo", "Country Time", "Pennzoil"], 10),
+  D("Steve Park", [], ["dei"], ["chevy"], ["1"], 2, 0, ["watkinsglen", "rockingham"], [2000], 1997, 2004, ["Pennzoil"], 3),
+  D("Kasey Kahne", [], ["hendrick"], ["dodge", "ford", "toyota", "chevy"], ["9", "83", "5", "95"], 18, 0, ["bristol", "indy"], [2000, 2010], 2004, 2018, ["Dodge Dealers", "Budweiser", "Farmers Insurance", "Great Clips"], 12),
+  D("Alan Kulwicki", ["special k", "underbird"], [], ["ford"], ["7", "35"], 5, 1, ["bristol", "rockingham"], [1980, 1990], 1985, 1993, ["Hooters", "Zerex"], 5),
+  D("Ricky Craven", [], ["hendrick"], ["chevy", "pontiac", "ford"], ["41", "25", "32"], 2, 0, ["darlington", "martinsville"], [2000], 1991, 2004, ["Tide", "Budweiser", "Kodiak"], 2),
+  D("Jeremy Mayfield", [], ["penske"], ["ford", "dodge"], ["12", "19", "98"], 5, 0, [], [1990, 2000], 1993, 2009, ["Mobil 1", "Dodge Dealers"], 4),
+  D("Marcos Ambrose", [], [], ["toyota", "ford"], ["47", "9"], 2, 0, ["watkinsglen"], [2010], 2008, 2014, ["Stanley", "DeWalt", "Little Debbie"], 4),
+  D("Martin Truex Jr.", [], ["dei", "gibbs"], ["chevy", "toyota"], ["1", "56", "78", "19"], 34, 1, ["darlington", "martinsville", "watkinsglen"], [2000, 2010, 2020], 2004, 2024, ["Bass Pro Shops", "NAPA", "Auto-Owners"], 24),
+  D("Chase Elliott", [], ["hendrick"], ["chevy"], ["24", "9"], 20, 1, ["talladega", "martinsville", "watkinsglen"], [2010, 2020], 2016, 0, ["NAPA", "Hooters", "Kelley Blue Book"], 36),
+  D("Kyle Larson", ["yung money"], ["ganassi", "hendrick"], ["chevy"], ["42", "5"], 32, 1, ["bristol", "darlington", "watkinsglen", "indy"], [2010, 2020], 2013, 0, ["Target", "Credit One", "McDonald's", "HendrickCars.com"], 34),
+  D("Christopher Bell", [], ["gibbs"], ["toyota"], ["95", "20"], 12, 0, ["martinsville"], [2020], 2020, 0, ["DeWalt", "Rheem"], 22),
+  D("Ryan Blaney", [], ["wood", "penske"], ["ford"], ["21", "12"], 15, 1, ["daytona", "talladega", "martinsville"], [2010, 2020], 2014, 0, ["Motorcraft", "Menards", "BodyArmor"], 27),
+  D("Ross Chastain", ["melon man"], ["trackhouse", "ganassi"], ["chevy"], ["42", "1"], 6, 0, ["talladega"], [2020], 2017, 0, ["Kubota", "Moose Fraternity"], 25),
+  D("Bubba Wallace", [], ["rpm", "23xi"], ["chevy", "ford", "toyota"], ["43", "23"], 3, 0, ["talladega", "indy"], [2020], 2017, 0, ["McDonald's", "DoorDash", "Columbia"], 28),
+];
+
+function surname(name) {
+  var t = String(name).trim().split(/\s+/);
+  while (t.length > 1 && /^(II|III|IV|V)$/i.test(t[t.length - 1])) t.pop();
+  var last = t[t.length - 1];
+  if (t.length > 1 && /^(Jr|Sr)\.?$/i.test(last)) return t[t.length - 2] + " " + last.replace(/\.$/, "");
+  return last;
+}
+function yearsOf(d) { return d.y0 + "–" + (d.y1 === 0 || d.y1 === 9999 ? "now" : d.y1); }
+
+/* ---------------- clue pool ---------------- */
+var TEAM_NAMES = {
+  hendrick: "Hendrick", roush: "Roush", dei: "DEI", wood: "the Wood Brothers",
+  gibbs: "Joe Gibbs Racing", rcr: "Richard Childress Racing", penske: "Penske",
+  juniorjohnson: "Junior Johnson", pettyent: "Petty Enterprises", yates: "Yates",
+};
+var MAKE_NAMES = { ford: "Ford", chevy: "Chevrolet", dodge: "Dodge", pontiac: "Pontiac", toyota: "Toyota" };
+function has(arr, v) { return arr.indexOf(v) >= 0; }
+function clue(id, cat, label, test) { return { id: id, cat: cat, label: label, test: test }; }
+var CLUES = [];
+["hendrick", "roush", "dei", "wood", "gibbs", "rcr", "penske", "juniorjohnson", "pettyent", "yates"].forEach(function (t) {
+  CLUES.push(clue("team:" + t, "team", "Drove for " + TEAM_NAMES[t], function (d) { return has(d.t, t); }));
+});
+[["daytona", "Won at Daytona"], ["bristol", "Won at Bristol"], ["darlington", "Won at Darlington"],
+ ["talladega", "Won at Talladega"], ["martinsville", "Won at Martinsville"], ["rockingham", "Won at Rockingham"],
+ ["northwilkesboro", "Won at North Wilkesboro"], ["watkinsglen", "Won at Watkins Glen"], ["indy", "Won the Brickyard 400"]
+].forEach(function (p) {
+  CLUES.push(clue("track:" + p[0], "track", p[1], function (d) { return has(d.tr, p[0]); }));
+});
+["3", "6", "11", "24", "43", "88"].forEach(function (n) {
+  CLUES.push(clue("num:" + n, "number", "Drove the No. " + n, function (d) { return has(d.no, n); }));
+});
+["ford", "chevy", "dodge", "pontiac", "toyota"].forEach(function (m) {
+  CLUES.push(clue("make:" + m, "make", "Drove a " + MAKE_NAMES[m], function (d) { return has(d.mk, m); }));
+});
+CLUES.push(
+  clue("stat:champ", "stat", "Cup champion", function (d) { return d.c > 0; }),
+  clue("stat:nochamp", "stat", "Never won a Cup title", function (d) { return d.c === 0; }),
+  clue("stat:wins10", "stat", "Won 10+ Cup races", function (d) { return d.w >= 10; }),
+  clue("stat:wins30", "stat", "Won 30+ Cup races", function (d) { return d.w >= 30; }),
+  clue("era:won80s", "era", "Won a Cup race in the 1980s", function (d) { return has(d.wd, 1980); }),
+  clue("era:won90s", "era", "Won a Cup race in the 1990s", function (d) { return has(d.wd, 1990); }),
+  clue("era:won00s", "era", "Won a Cup race in the 2000s", function (d) { return has(d.wd, 2000); }),
+  clue("era:won20s", "era", "Won a Cup race in the 2020s", function (d) { return has(d.wd, 2020); }),
+  clue("era:winston", "era", "Raced in the Winston Cup era", function (d) { return d.y0 <= 2003; }),
+  clue("era:start90s", "era", "Made a Cup start in the 1990s", function (d) { return d.y0 <= 1999 && (d.y1 === 0 || d.y1 >= 1990); })
+);
+function clueById(id) { for (var i = 0; i < CLUES.length; i++) if (CLUES[i].id === id) return CLUES[i]; return null; }
+function matchCount(r, c) {
+  var n = 0;
+  for (var i = 0; i < DRIVERS.length; i++) if (r.test(DRIVERS[i]) && c.test(DRIVERS[i])) n++;
+  return n;
+}
+
+/* ---------------- daily grid generation (deterministic per date) ---------------- */
+function buildGrid(seedStr) {
+  var rng = rngFromSeed("grid|" + seedStr);
+  for (var attempt = 0; attempt < 500; attempt++) {
+    var pool = shuffle(CLUES, rng);
+    var rows = pool.slice(0, 3);
+    var cats = {};
+    rows.forEach(function (r) { cats[r.cat] = 1; });
+    if (Object.keys(cats).length < 2) continue;
+    var cols = [];
+    for (var i = 3; i < pool.length && cols.length < 3; i++) {
+      var c = pool[i], ok = true;
+      for (var j = 0; j < 3; j++) {
+        if (c.id === rows[j].id || matchCount(rows[j], c) < 2) { ok = false; break; }
+      }
+      if (ok) cols.push(c);
+    }
+    if (cols.length < 3) continue;
+    var ccats = {};
+    cols.forEach(function (c2) { ccats[c2.cat] = 1; });
+    if (Object.keys(ccats).length < 2) continue;
+    return { rows: rows, cols: cols };
+  }
+  // extremely unlikely fallback: a known-good grid
+  return {
+    rows: [clueById("team:hendrick"), clueById("era:won90s"), clueById("make:ford")],
+    cols: [clueById("track:daytona"), clueById("stat:champ"), clueById("stat:nochamp")],
+  };
+}
+
+/* ---------------- rarity (mocked from day one) ---------------- */
+function rarityFor(d, seedStr, cellIdx) {
+  var jitter = (hashString(seedStr + "|" + cellIdx + "|" + d.n) % 5) - 2;
+  return Math.max(1, Math.min(95, d.r + jitter));
+}
+function rarityLine(r, seedStr) {
+  var bands = r <= 5
+    ? ["That one's for the old heads.", "You watched the good stuff."]
+    : r <= 14
+      ? ["Deep cut.", "Nice pull."]
+      : r <= 29
+        ? ["That answer plays.", "Nice pull."]
+        : ["Too easy.", "Garage knew that one."];
+  return bands[hashString(seedStr + "|line|" + r) % bands.length];
+}
+
+/* ---------------- autocomplete ---------------- */
+function norm(s) { return String(s).toLowerCase().replace(/[^a-z0-9 ]+/g, "").replace(/\s+/g, " ").trim(); }
+function suggest(q) {
+  q = norm(q);
+  if (!q) return [];
+  var scored = [];
+  DRIVERS.forEach(function (d) {
+    var full = norm(d.n), sur = norm(surname(d.n));
+    var score = 0;
+    if (full === q) score = 6;
+    else if ((d.a || []).some(function (al) { return norm(al) === q; })) score = 5;
+    else if (full.indexOf(q) === 0) score = 4;
+    else if ((d.a || []).some(function (al) { return norm(al).indexOf(q) === 0; })) score = 3;
+    else if (sur.indexOf(q) === 0) score = 3;
+    else if (full.split(" ").some(function (wd) { return wd.indexOf(q) === 0; })) score = 2;
+    else if (full.indexOf(q) >= 0) score = 1;
+    if (score > 0) scored.push({ d: d, s: score });
+  });
+  scored.sort(function (a, b) { return b.s - a.s || a.d.n.localeCompare(b.d.n); });
+  return scored.slice(0, 6).map(function (x) { return x.d; });
+}
+
+/* ---------------- shared chrome ---------------- */
+function hubTopbar(modeLabel) {
+  var left = modeLabel
+    ? el("div", { class: "brand" }, [
+        el("button", { class: "btn ghost", style: "padding:7px 11px;font-size:14px", text: "‹ Games", onClick: goHome }),
+        el("span", { class: "wordmark", text: modeLabel }),
+      ])
+    : el("div", { class: "brand" }, [
+        el("span", { class: "wordmark", text: "THE LINEUP" }),
+        el("span", { class: "dot display", text: "●" }),
+        el("span", { class: "mode", text: "NASCAR Games" }),
+      ]);
+  return el("header", { class: "topbar" }, [
+    left,
+    el("span", { class: "muted", style: "font-size:11px;letter-spacing:.08em;text-transform:uppercase", text: "prototype" }),
+  ]);
+}
+function hubFooter(extra) {
+  return el("footer", { class: "foot" }, [
+    el("div", { text: (extra ? extra + " " : "") + "Prototype. Driver facts are a hand-entered seed dataset (through 2025) — not yet verified." }),
+  ]);
+}
+function setHubScreen(modeLabel) {
+  var frag = el("div", { class: "stack grow" }, Array.prototype.slice.call(arguments, 1));
+  clear($app);
+  mount($app, hubTopbar(modeLabel), frag, hubFooter(modeLabel === null ? "" : ""));
+  window.scrollTo(0, 0);
+}
+
+/* =========================================================================
+   HUB HOME
+   ========================================================================= */
+function gameCard(opts) {
+  var kids = [
+    el("div", { class: "gc-top" }, [
+      el("div", { class: "gc-title", text: opts.title }),
+      opts.tag ? el("span", { class: "era-tag", text: opts.tag }) : null,
+    ]),
+    el("div", { class: "gc-desc", text: opts.desc }),
+    opts.stat ? el("div", { class: "gc-stat", text: opts.stat }) : null,
+  ];
+  var card = el("button", { class: "gamecard" + (opts.primary ? " primary" : "") + (opts.soon ? " soon" : "") }, kids);
+  if (!opts.soon && opts.onClick) card.addEventListener("click", opts.onClick);
+  return card;
+}
+function goHome() {
+  if (window.__CROSSERA_MODE__) window.__CROSSERA_MODE__.leave();
+  renderHub();
+}
+function renderHub() {
+  var dk = dateKey();
+  var gridSave = loadGridState(dk);
+  var gridStat = null;
+  if (gridSave && gridSave.done) {
+    gridStat = "Today: " + gridSave.cells.filter(Boolean).length + "/9 · played";
+  } else if (gridSave) {
+    gridStat = "In progress · " + gridSave.guesses + (gridSave.guesses === 1 ? " guess" : " guesses") + " left";
+  }
+  var best = parseInt(lsGet(LS.streakBest) || "0", 10);
+  var today = parseInt(lsGet(LS.streakToday + dk) || "0", 10);
+  var streakStat = best > 0 ? ("Best: " + best + (today > 0 ? " · Today: " + today : "")) : null;
+
+  setHubScreen(null,
+    el("div", { class: "checker" }),
+    el("div", { class: "hub-lede", text: "Daily NASCAR games for people who remember the Tide ride. Pick a game." }),
+    el("div", { class: "hub-cards" }, [
+      gameCard({
+        title: "Daily Grid", primary: true,
+        desc: "Nine cells. Each needs a driver who fits the row and the column. One grid a day, same for everybody. Deep cuts score more.",
+        stat: gridStat || "Grid #" + gridNumber() + " is up",
+        onClick: function () { lsSet(LS.lastMode, "grid"); renderGrid(); },
+      }),
+      gameCard({
+        title: "Streak",
+        desc: "Who had more Cup wins? Tap the driver. Keep going until you miss.",
+        stat: streakStat,
+        onClick: function () { lsSet(LS.lastMode, "streak"); renderStreak(); },
+      }),
+      gameCard({
+        title: "Cross-Era Draft", tag: "Archive",
+        desc: "Build a lineup from NASCAR history and try to beat a real team season.",
+        onClick: function () {
+          lsSet(LS.lastMode, "crossera");
+          if (window.__CROSSERA_MODE__) window.__CROSSERA_MODE__.enter();
+        },
+      }),
+      gameCard({ title: "Paint Booth", tag: "Coming soon", soon: true, desc: "Guess the scheme. Coming soon." }),
+      gameCard({ title: "Race Picks", tag: "Coming soon", soon: true, desc: "Set your Sunday lineup. Coming soon." }),
+    ])
+  );
+}
+
+/* =========================================================================
+   MODE 1: DAILY GRID
+   ========================================================================= */
+var Grid = null; // live state
+
+function loadGridState(dk) {
+  var raw = lsGet(LS.grid + dk);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch (e) { return null; }
+}
+function saveGridState() {
+  if (!Grid || Grid.dev) return;
+  lsSet(LS.grid + Grid.date, JSON.stringify({
+    rowIds: Grid.rows.map(function (r) { return r.id; }),
+    colIds: Grid.cols.map(function (c) { return c.id; }),
+    cells: Grid.cells, guesses: Grid.guesses, done: Grid.done,
+  }));
+}
+function newGridState(seedStr, dk, dev) {
+  var g = buildGrid(seedStr);
+  return {
+    date: dk, seed: seedStr, dev: !!dev, rows: g.rows, cols: g.cols,
+    cells: [null, null, null, null, null, null, null, null, null],
+    guesses: 9, done: false, sel: -1, feed: null,
+  };
+}
+function initGrid(dev) {
+  var dk = dateKey();
+  if (dev) { Grid = newGridState("dev|" + Math.random(), dk, true); return; }
+  var seedStr = dk;
+  var saved = loadGridState(dk);
+  Grid = newGridState(seedStr, dk, false);
+  if (saved && saved.rowIds) {
+    var rows = saved.rowIds.map(clueById), cols = saved.colIds.map(clueById);
+    if (rows.every(Boolean) && cols.every(Boolean)) {
+      Grid.rows = rows; Grid.cols = cols;
+      Grid.cells = saved.cells; Grid.guesses = saved.guesses; Grid.done = saved.done;
+    }
+  }
+}
+function gridCellDriver(idx) { return Grid.cells[idx] ? Grid.cells[idx].n : null; }
+function usedInGrid(name) {
+  return Grid.cells.some(function (c) { return c && c.n === name; });
+}
+function gridCorrectCount() { return Grid.cells.filter(Boolean).length; }
+function finishGridIfNeeded() {
+  if (gridCorrectCount() === 9 || Grid.guesses <= 0) { Grid.done = true; Grid.sel = -1; }
+}
+function gridShareText() {
+  var filled = Grid.cells.filter(Boolean);
+  var lines = ["THE LINEUP GRID #" + gridNumber(), gridCorrectCount() + "/9 today"];
+  if (filled.length) {
+    var avg = Math.round(filled.reduce(function (s, c) { return s + c.r; }, 0) / filled.length);
+    var best = filled.slice().sort(function (a, b) { return a.r - b.r; })[0];
+    lines.push("Avg rarity: " + avg + "%");
+    lines.push("Best pull: " + best.n + ", " + best.r + "%");
+  }
+  var em = "";
+  for (var i = 0; i < 9; i++) {
+    em += Grid.cells[i] ? "🟩" : "⬛";
+    if (i % 3 === 2 && i < 8) em += "\n";
+  }
+  lines.push(em);
+  return lines.join("\n");
+}
+
+function renderGrid() {
+  if (!Grid || Grid.date !== dateKey() || (Grid.dev && !DEV)) initGrid(false);
+  paintGrid();
+}
+function paintGrid() {
+  var g = Grid;
+  var head = el("div", { class: "row spread", style: "margin:8px 0 0" }, [
+    el("div", { class: "wordmark display", style: "font-size:20px", text: "Grid #" + gridNumber() + (g.dev ? " · dev" : "") }),
+    el("div", { class: "num", style: "font-size:20px;color:" + (g.guesses <= 2 ? "var(--red)" : "var(--cyan)"), text: g.guesses + (g.guesses === 1 ? " guess left" : " guesses left") }),
+  ]);
+  var help = el("div", { class: "lede", style: "margin:4px 0 0;font-size:13px", text: "Tap a cell, name a driver who fits the row and the column. Each driver can only be used once. Nine guesses for the day." });
+
+  var cellsWrap = el("div", { class: "ggrid" });
+  mount(cellsWrap, el("div", {}));
+  g.cols.forEach(function (c) { mount(cellsWrap, el("div", { class: "ghead", text: c.label })); });
+  for (var r = 0; r < 3; r++) {
+    mount(cellsWrap, el("div", { class: "ghead rowhead", text: g.rows[r].label }));
+    for (var c = 0; c < 3; c++) {
+      (function (idx) {
+        var cell = g.cells[idx];
+        var btn;
+        if (cell) {
+          btn = el("button", { class: "gcell ok" }, [
+            el("span", { class: "gc-nm", text: surname(cell.n) }),
+            el("span", { class: "gc-r", text: cell.r + "%" }),
+          ]);
+        } else if (g.done) {
+          btn = el("button", { class: "gcell dead" }, [el("span", { class: "gc-plus", text: "—" })]);
+        } else {
+          btn = el("button", { class: "gcell" + (g.sel === idx ? " sel" : "") }, [el("span", { class: "gc-plus", text: "+" })]);
+          btn.addEventListener("click", function () {
+            g.sel = (g.sel === idx ? -1 : idx); g.feed = null; paintGrid();
+            setTimeout(function () {
+              var inp = document.getElementById("gridInput");
+              if (inp) inp.focus();
+            }, 30);
+          });
+        }
+        mount(cellsWrap, btn);
+      })(r * 3 + c);
+    }
+  }
+
+  var parts = [el("div", { class: "checker thin" }), head, help, cellsWrap];
+
+  if (g.feed) {
+    parts.push(el("div", { class: "gfeed " + g.feed.cls, html: g.feed.html }));
+  }
+
+  if (g.done) {
+    parts.push(gridResults());
+  } else if (g.sel >= 0) {
+    parts.push(gridGuessPanel());
+  }
+
+  if (DEV && !g.done) {
+    parts.push(el("button", { class: "btn ghost", style: "margin-top:6px", text: "Random grid (dev)", onClick: function () { initGrid(true); paintGrid(); } }));
+  }
+  setHubScreen("DAILY GRID", el("div", { class: "stack" }, parts));
+}
+
+function gridGuessPanel() {
+  var g = Grid;
+  var row = g.rows[Math.floor(g.sel / 3)], col = g.cols[g.sel % 3];
+  var sugWrap = el("div", { class: "gsug" });
+  var input = el("input", {
+    class: "ginput", id: "gridInput", type: "text", placeholder: "Type a driver…",
+    autocomplete: "off", autocorrect: "off", spellcheck: "false",
+  });
+  var current = [];
+  function paintSuggestions() {
+    clear(sugWrap);
+    current = suggest(input.value);
+    current.forEach(function (d) {
+      var b = el("button", {}, [
+        el("span", { text: d.n + "  " }),
+        el("span", { class: "yrs", text: yearsOf(d) }),
+      ]);
+      b.addEventListener("click", function () { submitGuess(d, row, col); });
+      mount(sugWrap, b);
+    });
+  }
+  input.addEventListener("input", paintSuggestions);
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && current.length) { e.preventDefault(); submitGuess(current[0], row, col); }
+  });
+  return el("div", { class: "gpanel" }, [
+    el("div", { class: "gp-clues" }, [
+      el("span", { text: row.label }),
+      el("span", { class: "gp-x", text: "×" }),
+      el("span", { text: col.label }),
+    ]),
+    input, sugWrap,
+    el("button", { class: "btn ghost", style: "margin-top:10px", text: "Cancel", onClick: function () { g.sel = -1; g.feed = null; paintGrid(); } }),
+  ]);
+}
+
+function submitGuess(d, row, col) {
+  var g = Grid;
+  if (g.done || g.sel < 0) return;
+  if (usedInGrid(d.n)) {
+    g.feed = { cls: "bad", html: "<b>" + d.n + "</b> is already on your grid today. One cell per driver." };
+    paintGrid(); return;
+  }
+  var fitR = row.test(d), fitC = col.test(d);
+  if (fitR && fitC) {
+    var r = rarityFor(d, g.seed, g.sel);
+    g.cells[g.sel] = { n: d.n, r: r };
+    g.feed = { cls: "good", html: "<b>Correct.</b> Rarity: " + r + "%. " + rarityLine(r, g.seed + d.n) };
+    g.sel = -1;
+  } else {
+    g.guesses -= 1;
+    var miss = !fitR && !fitC
+      ? "<b>" + d.n + "</b> doesn't fit either clue."
+      : "Close — <b>" + d.n + "</b> fits “" + (fitR ? row.label : col.label) + "” but not “" + (fitR ? col.label : row.label) + "”.";
+    g.feed = { cls: "bad", html: miss };
+  }
+  finishGridIfNeeded();
+  saveGridState();
+  paintGrid();
+}
+
+function gridResults() {
+  var g = Grid;
+  var filled = g.cells.filter(Boolean);
+  var score = filled.reduce(function (s, c) { return s + (100 - c.r); }, 0);
+  var avg = filled.length ? Math.round(filled.reduce(function (s, c) { return s + c.r; }, 0) / filled.length) : 0;
+  var rare = filled.filter(function (c) { return c.r <= 10; }).length;
+  var share = gridShareText();
+  var copyBtn = el("button", { class: "btn primary", text: "Copy share text" });
+  copyBtn.addEventListener("click", function () { copyText(share, copyBtn); });
+  var verdict = gridCorrectCount() === 9 ? "Clean sweep." : gridCorrectCount() >= 6 ? "Solid day in the garage." : "The grid got you today.";
+  return el("div", {}, [
+    el("div", { class: "banner " + (gridCorrectCount() >= 6 ? "win" : "miss"), style: "margin-top:10px" }, [
+      el("div", { class: "verdict display", text: gridCorrectCount() + "/9" }),
+      el("div", { class: "sub", text: verdict }),
+    ]),
+    el("div", { class: "sweep", style: "margin:8px 0" }, [
+      el("div", { class: "grid" }, [
+        statBox(String(score), "Score"),
+        statBox(avg + "%", "Avg rarity"),
+        statBox(String(rare), "Rare pulls (≤10%)"),
+        statBox(g.guesses + "", "Guesses left over"),
+      ]),
+    ]),
+    el("div", { class: "section-title", text: "Share it" }),
+    el("div", { class: "sharebox", text: share }),
+    copyBtn,
+    el("button", { class: "btn ghost", style: "margin-top:10px", text: "Back to games", onClick: goHome }),
+    DEV ? el("button", { class: "btn ghost", style: "margin-top:6px", text: "Random grid (dev)", onClick: function () { initGrid(true); paintGrid(); } }) : null,
+  ]);
+}
+function statBox(v, k) {
+  return el("div", { class: "stat" }, [
+    el("div", { class: "v", text: v }),
+    el("div", { class: "k", text: k }),
+  ]);
+}
+
+/* =========================================================================
+   MODE 2: STREAK
+   ========================================================================= */
+var Streak = null;
+
+function pickPair(prevPair, round) {
+  var pool = DRIVERS;
+  var buckets = ["hard", "med", "hard", "easy", "med", "hard", "med", "easy"];
+  var want = buckets[round % buckets.length];
+  var prev = prevPair ? [prevPair[0].n, prevPair[1].n] : [];
+  for (var tries = 0; tries < 400; tries++) {
+    var a = pool[Math.floor(Math.random() * pool.length)];
+    var b = pool[Math.floor(Math.random() * pool.length)];
+    if (a.n === b.n || a.w === b.w) continue;
+    if (prev.indexOf(a.n) >= 0 || prev.indexOf(b.n) >= 0) continue;
+    var diff = Math.abs(a.w - b.w);
+    var bucket = diff <= 8 ? "hard" : diff <= 25 ? "med" : "easy";
+    if (bucket !== want && tries < 250) continue;
+    return [a, b];
+  }
+  return [DRIVERS[0], DRIVERS[1]];
+}
+function renderStreak() {
+  Streak = { n: 0, pair: pickPair(null, 0), locked: false, round: 0 };
+  paintStreak();
+}
+function paintStreak() {
+  var s = Streak;
+  var best = parseInt(lsGet(LS.streakBest) || "0", 10);
+  var bar = el("div", { class: "streakbar" }, [
+    el("div", {}, [
+      el("div", { class: "label muted", style: "font-size:11px;letter-spacing:.1em;text-transform:uppercase", text: "Streak" }),
+      el("div", { class: "sb-n", text: String(s.n) }),
+    ]),
+    el("div", { class: "muted", style: "font-size:13px;text-align:right", text: "Best: " + Math.max(best, s.n) }),
+  ]);
+  var cardA = duelCard(s.pair[0]);
+  var cardB = duelCard(s.pair[1]);
+  setHubScreen("STREAK",
+    el("div", { class: "checker thin" }),
+    bar,
+    el("div", { class: "duelq", text: "Who had more Cup wins?" }),
+    el("div", { class: "duelsub", text: "Career Cup Series wins. Tap your pick." }),
+    el("div", { class: "duel" }, [cardA, el("div", { class: "vsline", text: "VS" }), cardB])
+  );
+}
+function duelCard(d) {
+  var btn = el("button", { class: "duelcard" }, [
+    el("div", { class: "dc-nm", text: d.n }),
+    el("div", { class: "dc-yr", text: "Cup: " + yearsOf(d) }),
+    el("div", { class: "dc-w num" }),
+  ]);
+  btn.addEventListener("click", function () { answerStreak(d, btn); });
+  return btn;
+}
+function answerStreak(pick, btn) {
+  var s = Streak;
+  if (s.locked) return;
+  s.locked = true;
+  var a = s.pair[0], b = s.pair[1];
+  var other = pick.n === a.n ? b : a;
+  var correct = pick.w > other.w;
+  // reveal both win counts, mark the pick (and the actual answer on a miss)
+  var nodes = document.querySelectorAll(".duelcard");
+  for (var i = 0; i < nodes.length; i++) {
+    var nm = nodes[i].querySelector(".dc-nm").textContent;
+    var d = nm === a.n ? a : b;
+    nodes[i].querySelector(".dc-w").textContent = String(d.w);
+    if (nm === pick.n) nodes[i].classList.add(correct ? "right" : "wrong");
+    else if (!correct) nodes[i].classList.add("right");
+  }
+  if (correct) {
+    s.n += 1; s.round += 1;
+    var dk = dateKey();
+    var today = parseInt(lsGet(LS.streakToday + dk) || "0", 10);
+    if (s.n > today) lsSet(LS.streakToday + dk, String(s.n));
+    var best = parseInt(lsGet(LS.streakBest) || "0", 10);
+    if (s.n > best) lsSet(LS.streakBest, String(s.n));
+    setTimeout(function () {
+      s.pair = pickPair(s.pair, s.round); s.locked = false; paintStreak();
+    }, 1400);
+  } else {
+    setTimeout(function () { streakGameOver(pick, other); }, 1400);
+  }
+}
+function streakGameOver(pick, other) {
+  var s = Streak;
+  var best = parseInt(lsGet(LS.streakBest) || "0", 10);
+  var share = "THE LINEUP STREAK\nI got " + s.n + " straight.\nLost on " + pick.n + " vs " + other.n + ".\nNot proud. Playing again.";
+  var copyBtn = el("button", { class: "btn ghost", text: "Copy share text" });
+  copyBtn.addEventListener("click", function () { copyText(share, copyBtn); });
+  setHubScreen("STREAK",
+    el("div", { class: "checker" }),
+    el("div", { class: "banner miss", style: "margin-top:12px" }, [
+      el("div", { class: "verdict display", text: s.n + " STRAIGHT" }),
+      el("div", { class: "sub", text: pick.n + " had " + pick.w + ". " + other.n + " had " + other.w + "." }),
+    ]),
+    el("div", { class: "sweep", style: "margin:8px 0" }, [
+      el("div", { class: "grid" }, [
+        statBox(String(s.n), "This run"),
+        statBox(String(Math.max(best, s.n)), "Best ever"),
+      ]),
+    ]),
+    el("div", { class: "sharebox", text: share }),
+    el("button", { class: "btn primary", style: "margin-top:4px", text: "Run it back", onClick: renderStreak }),
+    copyBtn,
+    el("button", { class: "btn ghost", style: "margin-top:6px", text: "Back to games", onClick: goHome })
+  );
+}
+
+/* ---------------- boot ---------------- */
+window.__HUB__ = { home: renderHub };
+renderHub();
 })();
 </script>
 </body>
