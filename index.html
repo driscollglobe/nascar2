@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>The Lineup — NASCAR Games</title>
+<title>The Lineup: NASCAR Games</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -294,6 +294,10 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .duelcard.wrong .dc-w { color: var(--red); }
 .streakbar { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 0; }
 .streakbar .sb-n { font-family: var(--display); font-weight: 700; font-size: 44px; color: var(--amber); line-height: 1; }
+.expbanner {
+  border: 1px solid var(--amber); background: rgba(242, 229, 0, 0.08); border-radius: var(--radius-sm);
+  padding: 10px 12px; font-size: 13px; color: var(--text); margin: 10px 0 0; line-height: 1.45;
+}
 </style>
 </head>
 <body>
@@ -939,7 +943,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
         el("div", { class: "wordmark display", style: "font-size:20px", text: "Cross-Era matchup" }),
         el("span", { class: "era-tag", text: "All eras" }),
       ]),
-      el("div", { class: "lede", text: "Build a lineup from NASCAR history and beat a real team's season. Sign or pass one driver at a time — any season since 1983. " + passes + " " + (passes === 1 ? "pass" : "passes") + ". A famous name in a down year is a trap." }),
+      el("div", { class: "lede", text: "Build a lineup from NASCAR history and beat a real team's season. Sign or pass one driver at a time, any season since 1983. " + passes + " " + (passes === 1 ? "pass" : "passes") + ". A famous name in a down year is a trap." }),
       benchmarkHero(os),
       el("button", { class: "btn primary", style: "margin-top:14px", text: "Play matchup", onClick: function () { startRun(); } }),
       el("div", { class: "actions", style: "margin-top:10px" }, [
@@ -1082,7 +1086,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
       var trivial = s.chaserWinRate >= 0.9;
       var panel = el("div", { class: "sweep" }, [
         el("h3", { text: "Difficulty check · " + s.n + " cross-era matchups" }),
-        el("div", { class: "lede", style: "margin-top:0", text: "Each matchup is a fresh real benchmark and a fresh cross-era pack. “Sign the biggest names” drafts by driver fame, not the hidden season — the naive trivialization play." }),
+        el("div", { class: "lede", style: "margin-top:0", text: "Each matchup is a fresh real benchmark and a fresh cross-era pack. “Sign the biggest names” drafts by driver fame, not the hidden season. That is the naive trivialization play." }),
         el("div", { class: "grid" }, [
           stat(pct(s.chaserWinRate), "Biggest-names win rate", trivial ? "var(--red)" : "var(--green)"),
           stat(pct(s.chaserVictoryLaneRate), "…of those, Victory Lane", "var(--amber)"),
@@ -1156,6 +1160,12 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
    ========================================================================= */
 
 var $app = document.getElementById("app");
+
+// Safety gate. false ships only Cross-Era Draft publicly; Daily Grid and
+// Streak render as locked Coming Soon tiles and cannot be entered. true
+// unlocks both for internal review, with a visible internal-prototype banner.
+const SHOW_EXPERIMENTAL_MODES = false;
+
 var DEV = /[?&]dev=1/.test(location.search);
 var LS = {
   grid: "lineupHub:grid:",            // + date key
@@ -1312,7 +1322,7 @@ function surname(name) {
   if (t.length > 1 && /^(Jr|Sr)\.?$/i.test(last)) return t[t.length - 2] + " " + last.replace(/\.$/, "");
   return last;
 }
-function yearsOf(d) { return d.y0 + "–" + (d.y1 === 0 || d.y1 === 9999 ? "now" : d.y1); }
+function yearsOf(d) { return d.y0 + " to " + (d.y1 === 0 || d.y1 === 9999 ? "now" : d.y1); }
 
 /* ---------------- clue pool ---------------- */
 var TEAM_NAMES = {
@@ -1388,16 +1398,23 @@ function buildGrid(seedStr) {
   };
 }
 
-/* ---------------- rarity (mocked from day one) ---------------- */
+/* ---------------- answer difficulty ----------------
+   The r score is a hand-tuned editorial guess used ONLY to pick a label and
+   rank a "best pull". It is never shown to the user as a number. Real rarity
+   comes only from logged answers after launch; never show a percentage
+   before that exists. */
 function rarityFor(d, seedStr, cellIdx) {
   var jitter = (hashString(seedStr + "|" + cellIdx + "|" + d.n) % 5) - 2;
   return Math.max(1, Math.min(95, d.r + jitter));
 }
+function difficultyLabel(r) {
+  return r <= 5 ? "Sicko pull" : r <= 14 ? "Deep cut" : r <= 29 ? "Solid pull" : "Obvious";
+}
 function rarityLine(r, seedStr) {
   var bands = r <= 5
-    ? ["That one's for the old heads.", "You watched the good stuff."]
+    ? ["That one's for the old heads."]
     : r <= 14
-      ? ["Deep cut.", "Nice pull."]
+      ? ["You watched the good stuff.", "Nice pull."]
       : r <= 29
         ? ["That answer plays.", "Nice pull."]
         : ["Too easy.", "Garage knew that one."];
@@ -1443,15 +1460,21 @@ function hubTopbar(modeLabel) {
     el("span", { class: "muted", style: "font-size:11px;letter-spacing:.08em;text-transform:uppercase", text: "prototype" }),
   ]);
 }
-function hubFooter(extra) {
+function hubFooter() {
   return el("footer", { class: "foot" }, [
-    el("div", { text: (extra ? extra + " " : "") + "Prototype. Driver facts are a hand-entered seed dataset (through 2025) — not yet verified." }),
+    el("div", { text: "The Lineup. NASCAR games prototype." }),
   ]);
+}
+// The internal-review banner. Replaces the old public unverified-facts footer:
+// it only exists while SHOW_EXPERIMENTAL_MODES is on.
+function expBanner() {
+  if (!SHOW_EXPERIMENTAL_MODES) return null;
+  return el("div", { class: "expbanner", text: "Internal prototype. Grid and Streak facts are not editorial-grade yet." });
 }
 function setHubScreen(modeLabel) {
   var frag = el("div", { class: "stack grow" }, Array.prototype.slice.call(arguments, 1));
   clear($app);
-  mount($app, hubTopbar(modeLabel), frag, hubFooter(modeLabel === null ? "" : ""));
+  mount($app, hubTopbar(modeLabel), frag, hubFooter());
   window.scrollTo(0, 0);
 }
 
@@ -1477,49 +1500,76 @@ function goHome() {
 }
 function renderHub() {
   var dk = dateKey();
-  var gridSave = loadGridState(dk);
-  var gridStat = null;
-  if (gridSave && gridSave.done) {
-    gridStat = "Today: " + gridSave.cells.filter(Boolean).length + "/9 · played";
-  } else if (gridSave) {
-    gridStat = "In progress · " + gridSave.guesses + (gridSave.guesses === 1 ? " guess" : " guesses") + " left";
-  }
-  var best = parseInt(lsGet(LS.streakBest) || "0", 10);
-  var today = parseInt(lsGet(LS.streakToday + dk) || "0", 10);
-  var streakStat = best > 0 ? ("Best: " + best + (today > 0 ? " · Today: " + today : "")) : null;
-
-  setHubScreen(null,
-    el("div", { class: "checker" }),
-    el("div", { class: "hub-lede", text: "Daily NASCAR games for people who remember the Tide ride. Pick a game." }),
-    el("div", { class: "hub-cards" }, [
+  var cards = [
+    gameCard({
+      title: "Cross-Era Draft", primary: true, tag: "The archive draft",
+      desc: "Build a lineup from NASCAR history. Beat the real team.",
+      onClick: function () {
+        lsSet(LS.lastMode, "crossera");
+        if (window.__CROSSERA_MODE__) window.__CROSSERA_MODE__.enter();
+      },
+    }),
+  ];
+  if (SHOW_EXPERIMENTAL_MODES) {
+    var gridSave = loadGridState(dk);
+    var gridStat = null;
+    if (gridSave && gridSave.done) {
+      gridStat = "Today: " + gridSave.cells.filter(Boolean).length + "/9, played";
+    } else if (gridSave) {
+      gridStat = "In progress, " + gridSave.guesses + (gridSave.guesses === 1 ? " guess" : " guesses") + " left";
+    }
+    var best = parseInt(lsGet(LS.streakBest) || "0", 10);
+    var today = parseInt(lsGet(LS.streakToday + dk) || "0", 10);
+    var streakStat = best > 0 ? ("Best: " + best + (today > 0 ? ", today: " + today : "")) : null;
+    cards.push(
       gameCard({
-        title: "Daily Grid", primary: true,
-        desc: "Nine cells. Each needs a driver who fits the row and the column. One grid a day, same for everybody. Deep cuts score more.",
+        title: "Daily Grid", tag: "Internal",
+        desc: "Nine cells. Each needs a driver who fits the row and the column. One grid a day, same for everybody.",
         stat: gridStat || "Grid #" + gridNumber() + " is up",
         onClick: function () { lsSet(LS.lastMode, "grid"); renderGrid(); },
       }),
       gameCard({
-        title: "Streak",
+        title: "Streak", tag: "Internal",
         desc: "Who had more Cup wins? Tap the driver. Keep going until you miss.",
         stat: streakStat,
         onClick: function () { lsSet(LS.lastMode, "streak"); renderStreak(); },
-      }),
-      gameCard({
-        title: "Cross-Era Draft", tag: "Archive",
-        desc: "Build a lineup from NASCAR history and try to beat a real team season.",
-        onClick: function () {
-          lsSet(LS.lastMode, "crossera");
-          if (window.__CROSSERA_MODE__) window.__CROSSERA_MODE__.enter();
-        },
-      }),
-      gameCard({ title: "Paint Booth", tag: "Coming soon", soon: true, desc: "Guess the scheme. Coming soon." }),
-      gameCard({ title: "Race Picks", tag: "Coming soon", soon: true, desc: "Set your Sunday lineup. Coming soon." }),
-    ])
+      })
+    );
+  } else {
+    cards.push(
+      gameCard({ title: "Daily Grid", tag: "Coming soon", soon: true, desc: "Drivers, teams, tracks and numbers. Coming soon." }),
+      gameCard({ title: "Streak", tag: "Coming soon", soon: true, desc: "Who had more Cup wins? Coming soon." })
+    );
+  }
+  cards.push(
+    gameCard({ title: "Paint Booth", tag: "Coming soon", soon: true, desc: "Guess the scheme. Coming soon." }),
+    gameCard({ title: "Race Picks", tag: "Coming soon", soon: true, desc: "Set your Sunday lineup. Coming soon." })
+  );
+  setHubScreen(null,
+    el("div", { class: "checker" }),
+    el("div", { class: "hub-lede", text: "Daily NASCAR games for people who remember the Tide ride. Pick a game." }),
+    expBanner(),
+    el("div", { class: "hub-cards" }, cards)
   );
 }
 
 /* =========================================================================
-   MODE 1: DAILY GRID
+   MODE 1: DAILY GRID (internal only while SHOW_EXPERIMENTAL_MODES is false)
+
+   TODO before Daily Grid ships publicly (parked, do not build in this pass):
+   - Replace the 50-driver hand-entered seed with an MSS-verified dataset.
+   - Expand the pool to 200+ drivers.
+   - Full-grid backtracking solver that guarantees every daily grid has a
+     complete solution using 9 distinct drivers, not just 2+ names per cell.
+   - First-initial disambiguation wherever a surname is shown (K. Busch vs
+     Ku. Busch, the Bodines, Burtons, Labontes, Waltrips, Allisons).
+   - Safe autocomplete behavior for ambiguous surnames (typing "busch" or
+     "earnhardt" must never silently submit the wrong brother/generation).
+   - Misses-left counter copy pass.
+   - dateKey on a UTC epoch matching the flagship daily, not local midnight.
+   - Answer logging before any rarity stat exists. Real rarity comes only
+     from logged answers after launch. Never show a percentage before that.
+   - Editorial QA panel per cell: list every accepted answer for review.
    ========================================================================= */
 var Grid = null; // live state
 
@@ -1570,10 +1620,8 @@ function gridShareText() {
   var filled = Grid.cells.filter(Boolean);
   var lines = ["THE LINEUP GRID #" + gridNumber(), gridCorrectCount() + "/9 today"];
   if (filled.length) {
-    var avg = Math.round(filled.reduce(function (s, c) { return s + c.r; }, 0) / filled.length);
     var best = filled.slice().sort(function (a, b) { return a.r - b.r; })[0];
-    lines.push("Avg rarity: " + avg + "%");
-    lines.push("Best pull: " + best.n + ", " + best.r + "%");
+    lines.push("Best pull: " + best.n + " (" + difficultyLabel(best.r) + ")");
   }
   var em = "";
   for (var i = 0; i < 9; i++) {
@@ -1585,6 +1633,7 @@ function gridShareText() {
 }
 
 function renderGrid() {
+  if (!SHOW_EXPERIMENTAL_MODES) { renderHub(); return; }
   if (!Grid || Grid.date !== dateKey() || (Grid.dev && !DEV)) initGrid(false);
   paintGrid();
 }
@@ -1608,10 +1657,10 @@ function paintGrid() {
         if (cell) {
           btn = el("button", { class: "gcell ok" }, [
             el("span", { class: "gc-nm", text: surname(cell.n) }),
-            el("span", { class: "gc-r", text: cell.r + "%" }),
+            el("span", { class: "gc-r", text: difficultyLabel(cell.r) }),
           ]);
         } else if (g.done) {
-          btn = el("button", { class: "gcell dead" }, [el("span", { class: "gc-plus", text: "—" })]);
+          btn = el("button", { class: "gcell dead" }, [el("span", { class: "gc-plus", text: "·" })]);
         } else {
           btn = el("button", { class: "gcell" + (g.sel === idx ? " sel" : "") }, [el("span", { class: "gc-plus", text: "+" })]);
           btn.addEventListener("click", function () {
@@ -1627,7 +1676,7 @@ function paintGrid() {
     }
   }
 
-  var parts = [el("div", { class: "checker thin" }), head, help, cellsWrap];
+  var parts = [el("div", { class: "checker thin" }), expBanner(), head, help, cellsWrap];
 
   if (g.feed) {
     parts.push(el("div", { class: "gfeed " + g.feed.cls, html: g.feed.html }));
@@ -1692,13 +1741,13 @@ function submitGuess(d, row, col) {
   if (fitR && fitC) {
     var r = rarityFor(d, g.seed, g.sel);
     g.cells[g.sel] = { n: d.n, r: r };
-    g.feed = { cls: "good", html: "<b>Correct.</b> Rarity: " + r + "%. " + rarityLine(r, g.seed + d.n) };
+    g.feed = { cls: "good", html: "<b>Correct.</b> " + difficultyLabel(r) + ". " + rarityLine(r, g.seed + d.n) };
     g.sel = -1;
   } else {
     g.guesses -= 1;
     var miss = !fitR && !fitC
       ? "<b>" + d.n + "</b> doesn't fit either clue."
-      : "Close — <b>" + d.n + "</b> fits “" + (fitR ? row.label : col.label) + "” but not “" + (fitR ? col.label : row.label) + "”.";
+      : "Close. <b>" + d.n + "</b> fits “" + (fitR ? row.label : col.label) + "” but not “" + (fitR ? col.label : row.label) + "”.";
     g.feed = { cls: "bad", html: miss };
   }
   finishGridIfNeeded();
@@ -1709,9 +1758,8 @@ function submitGuess(d, row, col) {
 function gridResults() {
   var g = Grid;
   var filled = g.cells.filter(Boolean);
-  var score = filled.reduce(function (s, c) { return s + (100 - c.r); }, 0);
-  var avg = filled.length ? Math.round(filled.reduce(function (s, c) { return s + c.r; }, 0) / filled.length) : 0;
-  var rare = filled.filter(function (c) { return c.r <= 10; }).length;
+  var deepPlus = filled.filter(function (c) { return c.r <= 14; }).length;
+  var sicko = filled.filter(function (c) { return c.r <= 5; }).length;
   var share = gridShareText();
   var copyBtn = el("button", { class: "btn primary", text: "Copy share text" });
   copyBtn.addEventListener("click", function () { copyText(share, copyBtn); });
@@ -1723,10 +1771,10 @@ function gridResults() {
     ]),
     el("div", { class: "sweep", style: "margin:8px 0" }, [
       el("div", { class: "grid" }, [
-        statBox(String(score), "Score"),
-        statBox(avg + "%", "Avg rarity"),
-        statBox(String(rare), "Rare pulls (≤10%)"),
-        statBox(g.guesses + "", "Guesses left over"),
+        statBox(gridCorrectCount() + "/9", "Cells filled"),
+        statBox(String(deepPlus), "Deep cuts or better"),
+        statBox(String(sicko), "Sicko pulls"),
+        statBox(String(g.guesses), "Guesses left over"),
       ]),
     ]),
     el("div", { class: "section-title", text: "Share it" }),
@@ -1766,6 +1814,7 @@ function pickPair(prevPair, round) {
   return [DRIVERS[0], DRIVERS[1]];
 }
 function renderStreak() {
+  if (!SHOW_EXPERIMENTAL_MODES) { renderHub(); return; }
   Streak = { n: 0, pair: pickPair(null, 0), locked: false, round: 0 };
   paintStreak();
 }
@@ -1783,6 +1832,7 @@ function paintStreak() {
   var cardB = duelCard(s.pair[1]);
   setHubScreen("STREAK",
     el("div", { class: "checker thin" }),
+    expBanner(),
     bar,
     el("div", { class: "duelq", text: "Who had more Cup wins?" }),
     el("div", { class: "duelsub", text: "Career Cup Series wins. Tap your pick." }),
@@ -1836,6 +1886,7 @@ function streakGameOver(pick, other) {
   copyBtn.addEventListener("click", function () { copyText(share, copyBtn); });
   setHubScreen("STREAK",
     el("div", { class: "checker" }),
+    expBanner(),
     el("div", { class: "banner miss", style: "margin-top:12px" }, [
       el("div", { class: "verdict display", text: s.n + " STRAIGHT" }),
       el("div", { class: "sub", text: pick.n + " had " + pick.w + ". " + other.n + " had " + other.w + "." }),
