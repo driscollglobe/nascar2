@@ -494,6 +494,33 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
       candidates.push(seasons[Math.floor(pickRng() * seasons.length)]);
     });
 
+    // Deck guarantee (ported from the daily): the candidate set must be able
+    // to beat the benchmark BEFORE any pack is dealt, so no deal ever relies
+    // on post-deal repair. If the seed dealt the whole pool down-years (the
+    // failure mode: a 2-seat, 14-win benchmark with every candidate season
+    // low), upgrade the biggest-peak drivers to their best available season,
+    // strongest first, until the top `seats` candidates clear the benchmark.
+    // Deterministic: no rng, and a no-op for deals that were already fine.
+    function topSum(list) {
+      return list.map(function (c) { return c.wins; }).sort(function (a, b) { return b - a; })
+        .slice(0, seats).reduce(function (a, b) { return a + b; }, 0);
+    }
+    if (topSum(candidates) < benchmark) {
+      var peaks = [];
+      _byDriver.forEach(function (cards2, driver) {
+        if (!_careerWinners.has(driver)) return;
+        var eligible = cards2.filter(function (c) { return !rosterKey.has(c.year + "|" + c.driver); });
+        if (!eligible.length) return;
+        peaks.push(eligible.reduce(function (a, b) { return b.wins > a.wins ? b : a; }));
+      });
+      peaks.sort(function (a, b) { return b.wins - a.wins; });
+      for (var pi = 0; pi < peaks.length && topSum(candidates) < benchmark; pi++) {
+        for (var ci = 0; ci < candidates.length; ci++) {
+          if (candidates[ci].driver === peaks[pi].driver) { candidates[ci] = peaks[pi]; break; }
+        }
+      }
+    }
+
     var packSize = clamp(seats + passes + (PACK.extra || 0), PACK.minSize, PACK.maxSize);
     var cards = shuffle(candidates, rngFromSeed(seedStr + "|field")).slice(0, packSize);
 
@@ -1193,9 +1220,9 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 
 var $app = document.getElementById("app");
 
-// Safety gate. false ships only Cross-Era Draft publicly; Daily Grid and
-// Streak render as locked Coming Soon tiles and cannot be entered. true
-// unlocks both for internal review, with a visible internal-prototype banner.
+// Safety gate. false ships Cross-Era Draft and Streak publicly; Daily Grid
+// stays locked as a Coming Soon tile and cannot be entered. true unlocks
+// Grid for internal review, with the visible internal-prototype banner.
 const SHOW_EXPERIMENTAL_MODES = false;
 
 var DEV = /[?&]dev=1/.test(location.search);
