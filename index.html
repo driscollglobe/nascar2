@@ -2946,7 +2946,8 @@ function streakGameOver(pick, other) {
   window.track("streak_end", { score: s.n });
   window.track("game_complete", { mode: "streak", score: s.n });
   var pickN = dn(pick.n), otherN = dn(other.n);
-  var share = "THE LINEUP STREAK\nI got " + s.n + " straight.\nLost on " + pickN + " vs " + otherN + ".\nNot proud. Playing again." + allegianceBadgeLine() + "\n" + GAME_URL;
+  var lostLine = "Lost on " + pickN + " vs " + otherN + (/\.$/.test(otherN) ? "" : ".");
+  var share = "THE LINEUP STREAK\nI got " + s.n + " straight.\n" + lostLine + "\nNot proud. Playing again." + allegianceBadgeLine() + "\n" + GAME_URL;
   var copyBtn = el("button", { class: "btn ghost", text: "Copy share text" });
   copyBtn.addEventListener("click", function () { window.track("share_click", { mode: "streak" }); copyText(share, copyBtn); });
   setHubScreen("STREAK",
