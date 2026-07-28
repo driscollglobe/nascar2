@@ -511,6 +511,11 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
   // Single source of truth: change this one line to repoint every share.
   window.__LINEUP_URL__ = "https://driscollglobe.github.io/nascar2/";
 
+  // Optional newsletter signup. A human supplies the real URL here. Empty by
+  // default, which hides the "Get The Lineup daily" module everywhere. The game
+  // never collects an email itself and nothing is ever gated behind signup.
+  window.LINEUP_NEWSLETTER_URL = "";
+
   // Persistent legal disclaimer, shown in the footer on the hub and in every
   // mode. One source of truth so the wording stays identical everywhere.
   window.__LINEUP_LEGAL__ = "Unofficial fan game. Not affiliated with or endorsed by NASCAR, its teams, drivers or sponsors. Names and statistics are used for informational and entertainment purposes.";
@@ -2003,13 +2008,15 @@ var QA = DEV || !!(window.LINEUP_QA || window.__LINEUP_QA__);
 // hand-authored answers, fully deterministic, every existing invariant held.
 // Days after Sep 8 use the normal date-derived path unchanged.
 var LAUNCH_WEEK_SEEDS = {
-  "2026-09-02": { seed: "lw|5", diff: "easy" },     // welcoming: counts [13,14,14,15,20,24,27,28,33] min 13, median 20, twos 0
-  "2026-09-03": { seed: "lw|0", diff: "standard" }, // standard: counts [2,3,3,3,5,6,9,17,18] min 2, median 5, twos 1
-  "2026-09-04": { seed: "lw|1", diff: "standard" }, // standard: counts [5,5,7,13,13,15,22,24,24] min 5, median 13, twos 0
-  "2026-09-05": { seed: "lw|2", diff: "standard" }, // standard: counts [2,3,3,3,4,4,4,5,8] min 2, median 4, twos 1
-  "2026-09-06": { seed: "lw|4", diff: "standard" }, // standard: counts [3,4,5,6,9,10,19,21,27] min 3, median 9, twos 0
-  "2026-09-07": { seed: "lw|2", diff: "hard" },     // hard: counts [2,2,3,3,3,8,11,24,32] min 2, median 3, twos 2
-  "2026-09-08": { seed: "lw|4", diff: "hard" },     // hard: counts [2,2,3,4,4,6,13,18,22] min 2, median 4, twos 2
+  // Re-selected mechanically after the beta clue-pool expansion shifted the
+  // date-seed grids (same 1200-grid pool, same per-day criteria; see CHANGELOG).
+  "2026-09-02": { seed: "lw|4", diff: "easy" },     // welcoming: counts [5,5,6,22,30,30,34,54,58] min 5, median 30, twos 0
+  "2026-09-03": { seed: "lw|0", diff: "standard" }, // standard: counts [2,4,5,7,8,10,16,30,35] min 2, median 8, twos 1
+  "2026-09-04": { seed: "lw|1", diff: "standard" }, // standard: counts [2,3,3,4,6,7,55,63,74] min 2, median 6, twos 1
+  "2026-09-05": { seed: "lw|5", diff: "standard" }, // standard: counts [4,4,4,5,9,10,15,20,22] min 4, median 9, twos 0
+  "2026-09-06": { seed: "lw|7", diff: "standard" }, // standard: counts [2,3,4,7,8,11,16,30,37] min 2, median 8, twos 1
+  "2026-09-07": { seed: "lw|2", diff: "hard" },     // hard: counts [2,2,3,3,3,6,11,22,31] min 2, median 3, twos 2
+  "2026-09-08": { seed: "lw|5", diff: "hard" },     // hard: counts [2,3,3,3,3,4,11,15,29] min 2, median 3, twos 1
 };
 // The (seed, theme, difficulty) triple the live grid uses for a given UTC day.
 // Launch-week days override seed and difficulty; every other day is date-derived
@@ -2240,6 +2247,25 @@ function sweepShareLine() {
 // result screen the primary button routes to the next unfinished daily game;
 // when all three are done it becomes Share, and a Garage Sweep badge shows.
 // Returns an array of DOM nodes (banner, primary button, live countdown).
+// Optional newsletter module. Renders only when a human has set the URL; the
+// game never collects an email and nothing is gated behind it. Dismissible; the
+// dismissal is remembered locally.
+var NEWSLETTER_DISMISS = NS + "nlDismissed";
+function newsletterURL() { return window.LINEUP_NEWSLETTER_URL || ""; }
+function newsletterNode() {
+  if (!newsletterURL()) return null;
+  if (lsGet(NEWSLETTER_DISMISS) === "1") return null;
+  var wrap = el("div", { class: "newsletter" });
+  var x = el("button", { class: "nl-x", "aria-label": "Dismiss", text: "×", onClick: function () { lsSet(NEWSLETTER_DISMISS, "1"); if (wrap.parentNode) wrap.parentNode.removeChild(wrap); } });
+  mount(wrap,
+    el("a", { class: "nl-link", href: newsletterURL(), target: "_blank", rel: "noopener noreferrer", text: "Get The Lineup daily" }),
+    x
+  );
+  return wrap;
+}
+// The result-screen block shared by all three games. Progress, not obligation:
+// the primary action is Share (grid supplies its own share button and passes
+// skipShare), and a quiet "Play the next one" appears only while games remain.
 function buildMissionNav(justFinished, opts) {
   opts = opts || {};
   var nodes = [];
@@ -2250,18 +2276,19 @@ function buildMissionNav(justFinished, opts) {
       el("span", { class: "sb-emoji", text: "🧰" }),
       el("div", {}, [
         el("div", { class: "sb-t", text: "Garage Sweep" }),
-        el("div", { class: "sb-d", text: "All three daily games done" + (si.current >= 2 ? ". " + si.current + " day sweep streak." : ".") }),
+        el("div", { class: "sb-d", text: "All three played today" + (si.current >= 2 ? ". " + si.current + " day sweep streak." : ".") }),
       ]),
     ]));
   }
-  var next = nextMissionMode(justFinished);
-  if (next) {
-    nodes.push(el("div", { class: "mission-next", text: (MODE_LABEL[justFinished] || "Done") + " complete. Next up: " + MODE_LABEL[next] + "." }));
-    nodes.push(el("button", { class: "btn primary", style: "margin-top:6px", text: "Next up: " + MODE_LABEL[next] + " →", onClick: function () { missionGoto(next); } }));
-  } else if (opts.onShare) {
-    var shareBtn = el("button", { class: "btn primary", style: "margin-top:6px", text: "Share your day" });
+  if (!opts.skipShare && opts.onShare) {
+    var shareBtn = el("button", { class: "btn primary", style: "margin-top:6px", text: "Share" });
     shareBtn.addEventListener("click", function () { opts.onShare(shareBtn); });
     nodes.push(shareBtn);
+  }
+  // Secondary, and only when there is an unplayed daily game left.
+  var next = nextMissionMode(justFinished);
+  if (next) {
+    nodes.push(el("button", { class: "btn ghost", style: "margin-top:6px", text: "Play the next one", onClick: function () { missionGoto(next); } }));
   }
   // Offer (never force) allegiance once the player has finished a game and has
   // not chosen a driver yet. A quiet CTA, not an interrupting overlay.
@@ -2269,6 +2296,8 @@ function buildMissionNav(justFinished, opts) {
   if (!al || !al.driver) {
     nodes.push(el("button", { class: "btn ghost alleg-offer", style: "margin-top:6px", text: "Pick your driver", onClick: function () { showAllegiancePrompt(false); } }));
   }
+  var nl = newsletterNode();
+  if (nl) nodes.push(nl);
   nodes.push(countdownNode());
   return nodes;
 }
@@ -2278,7 +2307,7 @@ function buildMissionNav(justFinished, opts) {
    small persistent rules button. A local flag marks it seen; it never forces
    again. Copy is fixed and dash-free. */
 var RULES_COPY = {
-  grid: "Fill each cell with a driver who matches both clues. Each driver can be used once. Guess freely; wrong guesses cost nothing.",
+  grid: "Fill each box with a driver who matches both clues. Each driver can be used once. Guess freely; wrong guesses cost nothing.",
   ladder: "Pick the driver with more career Cup wins. One wrong answer ends your official run. Twenty rungs clears the daily.",
   crossera: "Sign drivers to beat the real team's season win total. Passes are limited. A driver's wins are revealed after you decide.",
 };
@@ -2290,18 +2319,20 @@ function markRulesSeen(game) { lsSet(LS.rulesSeen + game, "1"); }
 function rulesGridExample() {
   var wrap = el("div", { class: "ggrid rules-eg", style: "margin:10px 0 2px" });
   mount(wrap, el("div", {}));
-  ["Won at Daytona", "Won 20+"].concat([""]).slice(0, 2).forEach(function (t) {
+  ["Won at Daytona", "Won 10 or more"].forEach(function (t) {
     mount(wrap, el("div", { class: "ghead", text: t }));
   });
   mount(wrap, el("div", { class: "ghead", text: "" }));
-  var labels = ["Cup champion", "1990s winner", "Rookie of the Year"];
+  // Real clue types only (no championships or Rookie of the Year: those fields
+  // are not in the data and are never rendered).
+  var labels = ["Won in the 1990s", "Last name starts with G", "Started before 2004"];
   for (var r = 0; r < 3; r++) {
     mount(wrap, el("div", { class: "ghead rowhead", text: labels[r] }));
     for (var c = 0; c < 3; c++) {
       if (r === 0 && c === 0) {
         mount(wrap, el("div", { class: "gcell ok" }, [
           el("span", { class: "gc-nm", text: "Gordon" }),
-          el("span", { class: "gc-r", text: "Obvious" }),
+          el("span", { class: "gc-r", text: "Common pick" }),
         ]));
       } else {
         mount(wrap, el("div", { class: "gcell" }, [el("span", { class: "gc-plus", text: "+" })]));
@@ -2417,48 +2448,90 @@ function gYears(dr) {
   return dr.y1 >= new Date().getFullYear() ? "since " + dr.y0 : dr.y0 + " to " + dr.y1;
 }
 
-/* ---------------- clue pool (built from MSS fields only) ---------------- */
+/* ---------------- clue pool (built from MSS fields only) ----------------
+   FACTUAL-INTEGRITY AUDIT (see CHANGELOG). Every clue carries an evidential
+   basis and a claim form so the verifier can enforce the safety rules:
+     basis: VERIFIED-COMPLETE  a field with a proven completeness gate
+            POSITIVE-EVIDENCE  presence proven, absence NOT (row-counted
+                               fields that can lack a venue or a team)
+            DERIVED            computed from the above
+     form:  positive           a presence/membership claim (safe on any basis)
+            min-threshold       "N or more" (safe on any basis: true value can
+                               only be higher, so a label is always true)
+            era-safe            "started before Y" style (safe)
+            negative            "never / did not" (PERMITTED ONLY on
+                               VERIFIED-COMPLETE; verify.js check L enforces)
+   tracksWon (t) and orgs (o) are POSITIVE-EVIDENCE: absence is never asserted,
+   so no track or team negative clue exists here. */
 function has(arr, v) { return arr.indexOf(v) >= 0; }
-function clue(id, cat, label, test) { return { id: id, cat: cat, label: label, test: test }; }
+function clue(id, cat, label, test, form, basis) {
+  return { id: id, cat: cat, label: label, test: test, form: form || "positive", basis: basis || "POSITIVE-EVIDENCE" };
+}
+// Canonical first-name and family-name initials, derived mechanically from the
+// canonical display name. Names are known, so these are VERIFIED-COMPLETE and
+// always positive ("starts with X"), never a negative.
+function firstInitial(dr) { var f = (dn(dr.n) || "").trim().split(/\s+/)[0] || ""; return (f[0] || "").toUpperCase(); }
+function lastInitial(dr) { return (surname(dn(dr.n))[0] || "").toUpperCase(); }
 var CLUES = (function () {
   var list = [];
-  var orgCount = {}, trackCount = {}, wdCount = {}, sdCount = {};
+  var orgCount = {}, trackCount = {}, wdCount = {}, sdCount = {}, fnCount = {}, lnCount = {};
   GPOOL.forEach(function (dr) {
     (dr.o || []).forEach(function (oi) { orgCount[oi] = (orgCount[oi] || 0) + 1; });
     (dr.t || []).forEach(function (ti) { trackCount[ti] = (trackCount[ti] || 0) + 1; });
     (dr.wd || []).forEach(function (dec) { wdCount[dec] = (wdCount[dec] || 0) + 1; });
     (dr.sd || []).forEach(function (dec) { sdCount[dec] = (sdCount[dec] || 0) + 1; });
+    var fi = firstInitial(dr); if (/^[A-Z]$/.test(fi)) fnCount[fi] = (fnCount[fi] || 0) + 1;
+    var li = lastInitial(dr); if (/^[A-Z]$/.test(li)) lnCount[li] = (lnCount[li] || 0) + 1;
   });
   // Orgs at least 8 pool drivers drove for; tracks at least 6 pool drivers
   // won at; decades with at least 8 qualifiers. Mechanical thresholds, no
-  // hand-picked lists.
+  // hand-picked lists. Org clues surface the biggest (best-known) teams first,
+  // since famous orgs carry the most pooled drivers.
   Object.keys(orgCount).forEach(function (k) {
     if (orgCount[k] < 8) return;
     var oi = +k;
-    list.push(clue("org:" + oi, "team", "Drove for " + GF.orgs[oi], function (dr) { return has(dr.o || [], oi); }));
+    list.push(clue("org:" + oi, "team", "Drove for " + GF.orgs[oi], function (dr) { return has(dr.o || [], oi); }, "positive", "POSITIVE-EVIDENCE"));
   });
   Object.keys(trackCount).forEach(function (k) {
     if (trackCount[k] < 6) return;
     var ti = +k;
-    list.push(clue("track:" + ti, "track", "Won at " + GF.tracks[ti], function (dr) { return has(dr.t || [], ti); }));
+    list.push(clue("track:" + ti, "track", "Won at " + GF.tracks[ti], function (dr) { return has(dr.t || [], ti); }, "positive", "POSITIVE-EVIDENCE"));
+  });
+  // Easier verifiable types (beta feedback): first-letter clues drawn from the
+  // canonical names, added as ordinary candidates. Positive and complete.
+  Object.keys(fnCount).sort().forEach(function (L) {
+    if (fnCount[L] < 12) return;
+    list.push(clue("fn:" + L, "name", "First name starts with " + L, (function (LL) { return function (dr) { return firstInitial(dr) === LL; }; })(L), "positive", "VERIFIED-COMPLETE"));
+  });
+  Object.keys(lnCount).sort().forEach(function (L) {
+    if (lnCount[L] < 8) return;
+    list.push(clue("ln:" + L, "name", "Last name starts with " + L, (function (LL) { return function (dr) { return lastInitial(dr) === LL; }; })(L), "positive", "VERIFIED-COMPLETE"));
   });
   list.push(
-    clue("w:1", "stat", "Won a Cup race", function (dr) { return dr.w >= 1; }),
-    clue("w:10", "stat", "Won 10 or more Cup races", function (dr) { return dr.w >= 10; }),
-    clue("w:30", "stat", "Won 30 or more Cup races", function (dr) { return dr.w >= 30; }),
-    // Negative facts are only trustworthy for verified careers (v true).
-    clue("w:never", "stat", "Never won a Cup race", function (dr) { return dr.v && dr.w === 0; }),
-    clue("ft:10", "era", "Ran 10 or more full-time seasons", function (dr) { return dr.ft >= 10; }),
-    clue("era:pre2004", "era", "Started before 2004", function (dr) { return dr.y0 <= 2003; })
+    clue("w:1", "stat", "Won a Cup race", function (dr) { return dr.w >= 1; }, "min-threshold", "VERIFIED-COMPLETE"),
+    // Low-threshold win clue (beta feedback): easier than 10 or more.
+    clue("w:5", "stat", "Won 5 or more Cup races", function (dr) { return dr.w >= 5; }, "min-threshold", "VERIFIED-COMPLETE"),
+    clue("w:10", "stat", "Won 10 or more Cup races", function (dr) { return dr.w >= 10; }, "min-threshold", "VERIFIED-COMPLETE"),
+    clue("w:30", "stat", "Won 30 or more Cup races", function (dr) { return dr.w >= 30; }, "min-threshold", "VERIFIED-COMPLETE"),
+    // The ONE negative clue. Permitted only because it is gated on winsVerified
+    // (dr.v): a verified-complete zero. No track or team negative exists.
+    clue("w:never", "stat", "Never won a Cup race", function (dr) { return dr.v && dr.w === 0; }, "negative", "VERIFIED-COMPLETE"),
+    clue("ft:10", "era", "Ran 10 or more full-time seasons", function (dr) { return dr.ft >= 10; }, "min-threshold", "POSITIVE-EVIDENCE"),
+    clue("era:pre2004", "era", "Started before 2004", function (dr) { return dr.y0 <= 2003; }, "era-safe", "VERIFIED-COMPLETE")
   );
   [1970, 1980, 1990, 2000, 2010, 2020].forEach(function (dec) {
     if ((wdCount[dec] || 0) >= 8) {
-      list.push(clue("wd:" + dec, "era", "Won a Cup race in the " + dec + "s", function (dr) { return has(dr.wd || [], dec); }));
+      list.push(clue("wd:" + dec, "era", "Won a Cup race in the " + dec + "s", function (dr) { return has(dr.wd || [], dec); }, "positive", "DERIVED"));
     }
     if ((sdCount[dec] || 0) >= 8) {
-      list.push(clue("sd:" + dec, "era", "Made a Cup start in the " + dec + "s", function (dr) { return has(dr.sd || [], dec); }));
+      list.push(clue("sd:" + dec, "era", "Made a Cup start in the " + dec + "s", function (dr) { return has(dr.sd || [], dec); }, "positive", "VERIFIED-COMPLETE"));
     }
   });
+  // Wide-decade clues (beta feedback): broader spans, larger answer sets, easier.
+  list.push(
+    clue("sd:2010+", "era", "Made a Cup start in the 2010s or 2020s", function (dr) { return has(dr.sd || [], 2010) || has(dr.sd || [], 2020); }, "positive", "VERIFIED-COMPLETE"),
+    clue("wd:2000+", "era", "Won a Cup race since 2000", function (dr) { return has(dr.wd || [], 2000) || has(dr.wd || [], 2010) || has(dr.wd || [], 2020); }, "positive", "DERIVED")
+  );
   return list;
 })();
 function clueById(id) { for (var i = 0; i < CLUES.length; i++) if (CLUES[i].id === id) return CLUES[i]; return null; }
@@ -2638,16 +2711,18 @@ function buildGridStandardFallback(seedStr, theme, difficulty) {
    come later. Never a percentage: real rarity comes only from logged
    answers after launch. */
 function labelFor(dr) {
-  return dr.w >= 50 ? "Obvious" : dr.w >= 15 ? "Solid pull" : dr.w >= 3 ? "Deep cut" : "Sicko pull";
+  return dr.w >= 50 ? "Common pick" : dr.w >= 15 ? "Solid pick" : dr.w >= 3 ? "Rare pick" : "Incredible pick";
 }
-var LABEL_RANK = { "Obvious": 0, "Solid pull": 1, "Deep cut": 2, "Sicko pull": 3 };
+var LABEL_RANK = { "Common pick": 0, "Solid pick": 1, "Rare pick": 2, "Incredible pick": 3 };
+// One-line legend explaining the labels, shown where they appear post-game.
+var LABEL_LEGEND = "Labels rate how many of the day's answers players tend to reach for. Common pick is the popular answer, Incredible pick is the deepest.";
 function lineFor(label, seedStr) {
-  var bands = label === "Sicko pull"
+  var bands = label === "Incredible pick"
     ? ["That one's for the old heads."]
-    : label === "Deep cut"
-      ? ["You watched the good stuff.", "Nice pull."]
-      : label === "Solid pull"
-        ? ["That answer plays.", "Nice pull."]
+    : label === "Rare pick"
+      ? ["You watched the good stuff.", "Nice one."]
+      : label === "Solid pick"
+        ? ["That answer plays.", "Nice one."]
         : ["Too easy.", "Garage knew that one."];
   return bands[hashString(seedStr + "|line|" + label) % bands.length];
 }
@@ -2717,13 +2792,15 @@ function gameCard(opts) {
   var kids = [
     el("div", { class: "gc-top" }, [
       el("div", { class: "gc-title", text: opts.title }),
-      opts.tag ? el("span", { class: "era-tag", text: opts.tag }) : null,
+      opts.played ? el("span", { class: "gc-check", title: "Played today", text: "✓ Played" }) : (opts.tag ? el("span", { class: "era-tag", text: opts.tag }) : null),
     ]),
     el("div", { class: "gc-desc", text: opts.desc }),
     opts.stat ? el("div", { class: "gc-stat", text: opts.stat }) : null,
   ];
   if (opts.extra) opts.extra.forEach(function (n) { if (n) kids.push(n); });
-  var card = el("button", { class: "gamecard" + (opts.primary ? " primary" : "") + (opts.soon ? " soon" : "") }, kids);
+  // A finished daily settles the card (dimmed accent, check) but stays tappable
+  // for practice and archive.
+  var card = el("button", { class: "gamecard" + (opts.primary ? " primary" : "") + (opts.soon ? " soon" : "") + (opts.played ? " played" : "") }, kids);
   if (!opts.soon && opts.onClick) card.addEventListener("click", opts.onClick);
   return card;
 }
@@ -2776,7 +2853,8 @@ function renderHub() {
   cards.push(
     gameCard({
       title: "Daily Grid", primary: true, tag: "Today's Game",
-      desc: "Nine cells. Each needs a driver who fits the row and the column. Clues from wins, teams, tracks won and racing decades. One grid a day, same for everybody.",
+      played: !!(gridSave && gridSave.done),
+      desc: "Nine boxes. Each needs a driver who fits the row and the column. Clues from wins, teams, tracks won and racing decades. One grid a day, same for everybody.",
       stat: gridStat || "Grid #" + gridNumber() + " is up",
       extra: gridExtra,
       onClick: function () { lsSet(LS.lastMode, "grid"); renderGrid(); },
@@ -2798,7 +2876,8 @@ function renderHub() {
   cards.push(
     gameCard({
       title: "Streak", tag: "Daily Ladder",
-      desc: "Who had more Cup wins? Climb the daily ladder. Twenty rungs clears the daily, then overtime. Free play is one tap away.",
+      played: !!li.playedToday,
+      desc: "Pick who has more career wins. Climb the daily ladder. Twenty rungs clears the daily, then overtime. Free play is one tap away.",
       stat: ladderStat,
       onClick: function () { lsSet(LS.lastMode, "streak"); renderStreak("ladder"); },
     })
@@ -2817,6 +2896,7 @@ function renderHub() {
   cards.push(
     gameCard({
       title: "Cross-Era Draft", tag: "Build a Team",
+      played: !!cd,
       desc: "Build a lineup from NASCAR history. Beat the real team.",
       stat: crossStat,
       onClick: function () {
@@ -3135,7 +3215,7 @@ function gridShareText() {
   var lines = ["THE LINEUP GRID #" + gridNumber(), gridCorrectCount() + "/9 today"];
   if (filled.length) {
     var best = filled.slice().sort(function (a, b) { return LABEL_RANK[b.l] - LABEL_RANK[a.l]; })[0];
-    lines.push("Best pull: " + dn(best.n) + " (" + best.l + ")");
+    lines.push("Best pick: " + dn(best.n) + " (" + best.l + ")");
   }
   // Rarity Score and Garage Find count, only when real stats produced them.
   var summ = gridRaritySummary();
@@ -3180,6 +3260,40 @@ function gridNumberForDate(dk) {
   var ms = Date.parse(dk + "T00:00:00Z");
   return Math.max(1, Math.round((ms - EPOCH_UTC) / 86400000) + 1);
 }
+var _gByName = null;
+function gDriver(n) {
+  if (!_gByName) { _gByName = {}; GPOOL.forEach(function (d) { _gByName[d.n] = d; }); }
+  return _gByName[n] || null;
+}
+// Completed-grid reveal: keep the player's own correct boxes fixed and fill the
+// rest with distinct valid drivers, so the finished grid shows all nine answers.
+function revealSolution(g) {
+  var used = {}; g.cells.forEach(function (c) { if (c) used[c.n] = 1; });
+  var empties = [];
+  for (var idx = 0; idx < 9; idx++) {
+    if (g.cells[idx]) continue;
+    var row = g.rows[Math.floor(idx / 3)], col = g.cols[idx % 3], list = [];
+    for (var i = 0; i < GPOOL.length; i++) if (row.test(GPOOL[i]) && col.test(GPOOL[i])) list.push(GPOOL[i].n);
+    empties.push({ idx: idx, list: list });
+  }
+  empties.sort(function (a, b) { return a.list.length - b.list.length; });
+  var pick = {}, nodes = 0;
+  function bt(k) {
+    if (nodes++ > 6000) return false;
+    if (k === empties.length) return true;
+    var cell = empties[k];
+    for (var i = 0; i < cell.list.length; i++) {
+      var n = cell.list[i];
+      if (used[n]) continue;
+      used[n] = 1; pick[cell.idx] = n;
+      if (bt(k + 1)) return true;
+      delete used[n]; delete pick[cell.idx];
+    }
+    return false;
+  }
+  if (!bt(0)) { pick = {}; empties.forEach(function (cell) { pick[cell.idx] = cell.list[0] || null; }); }
+  return pick;
+}
 function paintGrid() {
   var g = Grid;
   var gnum = g.archive ? gridNumberForDate(g.date) : gridNumber();
@@ -3191,9 +3305,12 @@ function paintGrid() {
     ]),
   ]);
   var archiveFlag = g.archive ? el("div", { class: "archive-flag", text: "ARCHIVE · " + g.date } ) : null;
-  var help = el("div", { class: "lede", style: "margin:4px 0 0;font-size:13px", text: "Tap a cell, name a driver who fits the row and the column. Each driver can only be used once. Guess freely, wrong guesses cost nothing." });
+  var help = g.done ? null : el("div", { class: "lede", style: "margin:4px 0 0;font-size:13px", text: "Tap a box, name a driver who fits the row and the column. Each driver can be used once. Guess freely, wrong guesses cost nothing." });
+  // When finished, the completed grid is the hero: every box filled, the
+  // player's own correct answers kept and the rest revealed (visually distinct).
+  var revealSol = g.done ? revealSolution(g) : null;
 
-  var cellsWrap = el("div", { class: "ggrid" });
+  var cellsWrap = el("div", { class: "ggrid" + (g.done ? " done" : "") });
   mount(cellsWrap, el("div", {}));
   g.cols.forEach(function (c) { mount(cellsWrap, el("div", { class: "ghead", text: c.label })); });
   for (var r = 0; r < 3; r++) {
@@ -3210,7 +3327,17 @@ function paintGrid() {
             rare ? el("span", { class: "gc-rare " + rare.cls, text: rare.label }) : null,
           ]);
         } else if (g.done) {
-          btn = el("button", { class: "gcell dead" }, [el("span", { class: "gc-plus", text: "·" })]);
+          var rn = revealSol ? revealSol[idx] : null;
+          var rdr = rn ? gDriver(rn) : null;
+          if (rn) {
+            btn = el("button", { class: "gcell reveal" }, [
+              el("span", { class: "gc-nm", text: CANON.short(rn, rdr ? rdr.d : null) }),
+              el("span", { class: "gc-r", text: rdr ? labelFor(rdr) : "" }),
+              el("span", { class: "gc-shown", text: "Revealed" }),
+            ]);
+          } else {
+            btn = el("button", { class: "gcell dead" }, [el("span", { class: "gc-plus", text: "·" })]);
+          }
         } else {
           btn = el("button", { class: "gcell" + (g.sel === idx ? " sel" : "") }, [el("span", { class: "gc-plus", text: "+" })]);
           btn.addEventListener("click", function () {
@@ -3228,7 +3355,7 @@ function paintGrid() {
 
   var parts = [el("div", { class: "checker thin" }), head, archiveFlag, help, cellsWrap];
 
-  if (g.feed) {
+  if (g.feed && !g.done) {
     parts.push(el("div", { class: "gfeed " + g.feed.cls, html: g.feed.html }));
   }
 
@@ -3268,7 +3395,7 @@ function paintGrid() {
 function qaPanel(g) {
   var open = false;
   var body = el("div", { class: "hidden" });
-  var btn = el("button", { class: "btn ghost", style: "margin-top:6px", text: "QA: accepted answers per cell" });
+  var btn = el("button", { class: "btn ghost", style: "margin-top:6px", text: "QA: accepted answers per box" });
   btn.addEventListener("click", function () {
     open = !open;
     body.classList.toggle("hidden", !open);
@@ -3337,12 +3464,24 @@ function logAnswer(g, row, col, d, ok) {
     lsSet(GRIDLOG_KEY, JSON.stringify(log));
   } catch (e) {}
 }
+// Wrong-guess feedback. FACTUAL-INTEGRITY RULE: it must never assert that a
+// driver did NOT win at a track or did NOT drive for a team, because tracksWon
+// and orgs are positive-evidence (absence proves nothing; see the Larson case).
+// So the un-matched side is framed as "not an accepted answer for this box" (a
+// true statement about the puzzle's answer set), and only the matched side is
+// named, positively. verify.js check L calls this with a track clue and fails
+// on any track/team negative.
+function missFeedback(name, fitR, fitC, row, col) {
+  if (fitR && !fitC) return "Close. <b>" + name + "</b> works for “" + row.label + "”, but is not an accepted answer for this box.";
+  if (fitC && !fitR) return "Close. <b>" + name + "</b> works for “" + col.label + "”, but is not an accepted answer for this box.";
+  return "<b>" + name + "</b> is not an accepted answer for this box.";
+}
 function submitGuess(d, row, col) {
   var g = Grid;
   if (g.done || g.sel < 0) return;
   var name = dn(d.n);
   if (usedInGrid(d.n)) {
-    g.feed = { cls: "bad", html: "<b>" + name + "</b> is already on your grid today. One cell per driver." };
+    g.feed = { cls: "bad", html: "<b>" + name + "</b> is already on your grid today. One box per driver." };
     paintGrid(); return;
   }
   var fitR = row.test(d), fitC = col.test(d);
@@ -3366,10 +3505,7 @@ function submitGuess(d, row, col) {
   } else {
     // No fail state: a wrong guess costs nothing. It just shakes and explains.
     g._shake = g.sel;
-    var miss = !fitR && !fitC
-      ? "<b>" + name + "</b> doesn't fit either clue."
-      : "Close. <b>" + name + "</b> fits “" + (fitR ? row.label : col.label) + "” but not “" + (fitR ? col.label : row.label) + "”.";
-    g.feed = { cls: "bad", html: miss };
+    g.feed = { cls: "bad", html: missFeedback(name, fitR, fitC, row, col) };
   }
   var wasDone = g.done;
   finishGridIfNeeded();
@@ -3391,25 +3527,32 @@ function submitGuess(d, row, col) {
 function gridResults() {
   var g = Grid;
   var filled = g.cells.filter(Boolean);
-  var deepPlus = filled.filter(function (c) { return LABEL_RANK[c.l] >= 2; }).length;
-  var sicko = filled.filter(function (c) { return c.l === "Sicko pull"; }).length;
+  var rarePlus = filled.filter(function (c) { return LABEL_RANK[c.l] >= 2; }).length;
+  var incredible = filled.filter(function (c) { return c.l === "Incredible pick"; }).length;
   var share = gridShareText();
-  var copyBtn = el("button", { class: "btn primary", text: "Copy share text" });
+  var copyBtn = el("button", { class: "btn primary", style: "margin-top:8px", text: "Copy share text" });
   copyBtn.addEventListener("click", function () { window.track("share_click", { mode: "grid" }); copyText(share, copyBtn); });
-  var verdict = gridCorrectCount() === 9 ? "Clean sweep." : gridCorrectCount() >= 6 ? "Solid day in the garage." : "Nice pulls. Come back tomorrow for a fresh grid.";
+  // The completed grid above is the hero. The share button sits directly under
+  // it; a one-line legend explains the picks labels; the full accepted-answer
+  // lists live behind a single tap.
   var kids = [
-    el("div", { class: "banner " + (gridCorrectCount() >= 6 ? "win" : "miss"), style: "margin-top:10px" }, [
+    el("div", { class: "grid-legend", text: LABEL_LEGEND }),
+    copyBtn,
+  ];
+  var verdict = gridCorrectCount() === 9 ? "Clean sweep." : gridCorrectCount() >= 6 ? "Solid day in the garage." : "Good picks. Come back tomorrow for a fresh grid.";
+  kids.push(
+    el("div", { class: "banner " + (gridCorrectCount() >= 6 ? "win" : "miss"), style: "margin-top:12px" }, [
       el("div", { class: "verdict display", text: gridCorrectCount() + "/9" }),
       el("div", { class: "sub", text: verdict }),
     ]),
     el("div", { class: "sweep", style: "margin:8px 0" }, [
       el("div", { class: "grid" }, [
-        statBox(gridCorrectCount() + "/9", "Cells filled"),
-        statBox(String(deepPlus), "Deep cuts or better"),
-        statBox(String(sicko), "Sicko pulls"),
+        statBox(gridCorrectCount() + "/9", "Boxes filled"),
+        statBox(String(rarePlus), "Rare picks or better"),
+        statBox(String(incredible), "Incredible picks"),
       ]),
-    ]),
-  ];
+    ])
+  );
   var summ = gridRaritySummary();
   if (summ && !summ.pending) {
     var heroKids = [
@@ -3422,18 +3565,22 @@ function gridResults() {
   }
   var standings = allegianceStandingsNode();
   if (standings) kids.push(standings);
-  kids.push(
-    el("div", { class: "section-title", text: "Share it" }),
-    el("div", { class: "sharebox", text: share }),
-    copyBtn
-  );
-  kids.push(gridRevealNode());
-  var g = Grid;
+  // Full accepted-answer lists, one tap away (kept off the hero view).
+  var revealBody = el("div", { class: "hidden" });
+  var revealBtn = el("button", { class: "btn ghost", style: "margin-top:10px", text: "See every accepted answer" });
+  var revealOpen = false;
+  revealBtn.addEventListener("click", function () {
+    revealOpen = !revealOpen;
+    revealBody.classList.toggle("hidden", !revealOpen);
+    if (revealOpen && !revealBody.firstChild) mount(revealBody, gridRevealNode());
+    revealBtn.textContent = revealOpen ? "Hide accepted answers" : "See every accepted answer";
+  });
+  kids.push(revealBtn, revealBody);
   // Daily mission routing: the primary action sends the player to the next
   // unfinished daily game (or Share when all three are done). Archive plays are
   // outside the daily mission, so they keep their own simple navigation.
   if (!g.archive && !g.dev) {
-    buildMissionNav("grid", { onShare: function (btn) { window.track("share_click", { mode: "grid" }); copyText(share, btn); } })
+    buildMissionNav("grid", { skipShare: true })
       .forEach(function (n) { kids.push(n); });
   }
   var navButtons = [
@@ -3453,8 +3600,8 @@ function gridResults() {
 }
 // Near-miss reveal. For each cell, the full valid answer set ranked by rarity
 // when stats exist, otherwise by career wins descending. The player's own
-// answer is highlighted; the rarest is "Deepest cut"; missed cells get a
-// "You were close to:" header. Only rendered once the day is finished.
+// answer is highlighted; the rarest is tagged "Rarest answer"; missed boxes get
+// a "You were close to:" header. Only rendered once the day is finished.
 function gridRevealNode() {
   var g = Grid;
   var wrap = el("div", {}, [el("div", { class: "section-title", text: "The full board" })]);
@@ -3487,7 +3634,7 @@ function gridRevealNode() {
           ? el("span", { class: "r", text: ((a.count / cellStats.total) * 100).toFixed(1) + "%" })
           : el("span", { class: "r", text: a.w + (a.w === 1 ? " win" : " wins") });
         var left = [el("span", { text: a.name })];
-        if (isDeepest) left.push(el("span", { class: "tag-deep", text: "  Deepest cut" }));
+        if (isDeepest) left.push(el("span", { class: "tag-deep", text: "  Rarest answer" }));
         mount(listEl, el("div", { class: "ans" + (isMine ? " mine" : "") + (isDeepest ? " deepest" : "") }, [
           el("span", {}, left), right,
         ]));
