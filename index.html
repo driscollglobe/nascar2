@@ -357,6 +357,59 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .alleg-state { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
 .alleg-state select { font-size: 15px; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font-family: var(--body); }
 .share-badge { color: var(--amber); }
+
+/* ---------------- phase three ---------------- */
+.gc-weekday { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11.5px; color: var(--cyan); margin-top: 8px; }
+.practice-flag { align-self: flex-start; font-family: var(--display); font-weight: 700; letter-spacing: 0.1em; font-size: 11px; color: var(--amber); border: 1px solid var(--amber); border-radius: 999px; padding: 3px 10px; margin: 8px 0 0; }
+
+/* stats modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(6, 9, 13, 0.72); display: flex; align-items: flex-end; justify-content: center; z-index: 50; padding: 0; }
+@media (min-width: 520px) { .modal-overlay { align-items: center; } }
+.modal-panel { width: 100%; max-width: var(--maxw); max-height: 92vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--line2); border-radius: 16px 16px 0 0; padding: 16px 16px 22px; animation: sheetup 220ms var(--ease); }
+@media (min-width: 520px) { .modal-panel { border-radius: 16px; } }
+@keyframes sheetup { from { transform: translateY(24px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.modal-title { font-family: var(--display); font-weight: 700; text-transform: uppercase; font-size: 22px; }
+.modal-x { background: transparent; border: 1px solid var(--line2); color: var(--muted); border-radius: 999px; width: 34px; height: 34px; font-size: 18px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.stats-tabs { display: flex; gap: 6px; margin: 6px 0 12px; }
+.stats-tab { flex: 1; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; font-size: 12.5px; padding: 9px 4px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--panel2); color: var(--muted); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.stats-tab.on { border-color: var(--amber); color: var(--amber); background: rgba(242, 229, 0, 0.08); }
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 6px 0 12px; }
+.stats-cell { background: var(--panel2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 8px; text-align: center; }
+.stats-cell .v { font-family: var(--display); font-weight: 700; font-size: 26px; line-height: 1; }
+.stats-cell .k { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-top: 5px; }
+.dist { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
+.dist-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.dist-row .lbl { width: 34px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.dist-bar { height: 16px; background: var(--cyan); border-radius: 3px; min-width: 3px; }
+.dist-bar.hot { background: var(--amber); }
+.dist-row .cnt { color: var(--muted); font-variant-numeric: tabular-nums; }
+.stats-empty { color: var(--faint); font-size: 13.5px; padding: 14px 4px; text-align: center; }
+.stats-note { color: var(--faint); font-size: 12px; margin-top: 8px; }
+
+/* archive */
+.archive-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.archive-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 11px 13px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--raised); color: var(--text); cursor: pointer; font-family: var(--body); -webkit-tap-highlight-color: transparent; text-align: left; }
+.archive-item .an { font-family: var(--display); font-weight: 700; font-size: 16px; }
+.archive-item .ad { color: var(--muted); font-size: 12px; }
+.archive-item .as { font-family: var(--display); font-weight: 700; color: var(--green); }
+.archive-flag { align-self: flex-start; font-family: var(--display); font-weight: 700; letter-spacing: 0.1em; font-size: 11px; color: var(--cyan); border: 1px solid var(--cyan); border-radius: 999px; padding: 3px 10px; margin: 8px 0 0; }
+
+/* juice (all suppressed under reduced motion) */
+@keyframes cellpop { 0% { transform: scale(0.82); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
+@keyframes cellshake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
+@keyframes shimmer { 0% { box-shadow: 0 0 0 2px rgba(242,229,0,0.0), 0 0 0 rgba(242,229,0,0); } 30% { box-shadow: 0 0 0 3px rgba(242,229,0,0.9), 0 0 26px rgba(242,229,0,0.7); } 100% { box-shadow: 0 0 0 2px rgba(242,229,0,0.25), 0 0 0 rgba(242,229,0,0); } }
+@keyframes staggerin { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes climbpulse { 0% { transform: translateY(0) scale(1); } 40% { transform: translateY(-6px) scale(1.12); color: var(--green); } 100% { transform: translateY(0) scale(1); } }
+.j-pop { animation: cellpop 260ms var(--ease); }
+.j-shake { animation: cellshake 300ms var(--ease); }
+.j-shimmer { animation: shimmer 700ms var(--ease); }
+.j-climb { animation: climbpulse 360ms var(--ease); }
+.j-stagger { animation: staggerin 300ms var(--ease) both; }
+@media (prefers-reduced-motion: reduce) {
+  .modal-panel { animation: none; }
+  .j-pop, .j-shake, .j-shimmer, .j-climb, .j-stagger { animation: none !important; }
+}
 </style>
 </head>
 <body>
@@ -463,8 +516,8 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
    keys live under this namespace, and the hub migrates launch-build (v2)
    keys forward on boot so no player loses their streak or best.
    ========================================================================= */
-  window.__LINEUP_DATA_VERSION__ = 3;
-  window.__LINEUP_NS__ = "lineupHub:v3:";
+  window.__LINEUP_DATA_VERSION__ = 4;
+  window.__LINEUP_NS__ = "lineupHub:v4:";
 
 /* =========================================================================
    THEME_CALENDAR (editor block, edit like the data blocks).
@@ -539,6 +592,36 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
     return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
   }
   window.__LINEUP_DAY__ = { ms: dayMs, key: dayKeyStr };
+
+/* =========================================================================
+   Weekday difficulty curve for the Grid (window.__LINEUP_WEEKDAY__). NYT
+   crossword logic, deterministic by UTC weekday: Monday and Tuesday lean easy,
+   Friday and Saturday lean hard, the rest are standard. This is a weighting
+   INPUT to the seeded generator (it only selects among already-valid grids by
+   their median cell answer count), so the seed still fully determines the day
+   and it composes with the theme calendar rather than replacing it. To adjust
+   the curve, change the mapping below; the sweep (verify.js check H) reports
+   the resulting per-weekday distribution.
+   ========================================================================= */
+  function weekdayIndex(dayStr) {
+    var ms = Date.parse(dayStr + "T00:00:00Z");
+    return isNaN(ms) ? 3 : new Date(ms).getUTCDay(); // 0 Sun ... 6 Sat
+  }
+  function weekdayDifficulty(dayStr) {
+    var w = weekdayIndex(dayStr);
+    if (w === 1 || w === 2) return "easy";      // Mon, Tue
+    if (w === 5 || w === 6) return "hard";      // Fri, Sat
+    return "standard";                          // Wed, Thu, Sun
+  }
+  // Short hub line, a few words, no dashes. Standard days get no extra line.
+  var WEEKDAY_LABEL = {
+    1: "Monday grid. Easy roll.",
+    2: "Tuesday grid. Roll on.",
+    5: "Friday grid. Bring it.",
+    6: "Saturday grid. Tough one."
+  };
+  function weekdayLabel(dayStr) { return WEEKDAY_LABEL[weekdayIndex(dayStr)] || null; }
+  window.__LINEUP_WEEKDAY__ = { forDay: weekdayDifficulty, label: weekdayLabel };
 
 /* =========================================================================
    Driver allegiance store (window.__LINEUP_ALLEGIANCE__).
@@ -1564,6 +1647,8 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
     var view = buildResultView({ signed: eng.signed, result: result, orgSeason: os, percentile: percentile });
     window.track("game_complete", { mode: "crossera", outcome: result.outcome, score: result.total });
     window.track("crossera_result", { win: result.win, wins: result.total, benchmark: result.benchmark });
+    // Phase Three: record for the stats modal (daily and free play both count).
+    if (window.__LINEUP_RECORD_CROSSERA__) { try { window.__LINEUP_RECORD_CROSSERA__(result); } catch (e) {} }
 
     var share = crossEraShareText();
     var copyBtn = el("button", { class: "btn primary", text: "Copy share text" });
@@ -1598,10 +1683,12 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
       fillCrossStats(statsHost, eng);
     }
 
-    var optimalLine = el("div", { class: "lede", style: "margin-top:10px", text: "Best possible " + (App.isDaily ? "today" : "from this pack") + ": " + run.maxOrdered + (run.maxOrdered === 1 ? " win." : " wins.") });
+    // Optimal summary animates in last, after the head-to-head reveal resolves.
+    var optimalLine = el("div", { class: "lede", style: "margin-top:10px;opacity:0", text: "Best possible " + (App.isDaily ? "today" : "from this pack") + ": " + run.maxOrdered + (run.maxOrdered === 1 ? " win." : " wins.") });
 
     var actionKids = [
       el("button", { class: "btn ghost", text: "Replay this pack", onClick: function () { window.track("game_replay", { mode: "crossera" }); startRun(App.lastSeed, true); } }),
+      el("button", { class: "btn ghost", text: "Stats", onClick: function () { if (window.__LINEUP_OPEN_STATS__) window.__LINEUP_OPEN_STATS__("crossera"); } }),
       DEV ? el("button", { class: "btn ghost", text: "Difficulty check", onClick: function () { renderSweep(); } }) : null,
     ];
     var primaryBtn = App.isDaily
@@ -1612,7 +1699,12 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
       el("div", { class: "actions" }, actionKids),
     ]);
     setScreen(el("div", { class: "checker" }), view.node, shareCard, statsHost, optimalLine, packRevealNode(run, eng.signed), actions);
-    view.play();
+    var played = view.play();
+    if (played && typeof played.then === "function") {
+      played.then(function () { optimalLine.style.opacity = "1"; optimalLine.classList.add("j-stagger"); });
+    } else {
+      optimalLine.style.opacity = "1";
+    }
   }
 
   function pct(x) { return Math.round(x * 100) + "%"; }
@@ -1756,40 +1848,46 @@ var CANON = window.__LINEUP_CANON__ || { name: function (s) { return String(s); 
 function dn(name) { return CANON.name(name); }
 var API = window.__LINEUP_API__ || { enabled: function () { return false; }, postAnswer: function () { return Promise.resolve(null); }, getStats: function () { return Promise.resolve(null); } };
 var THEME = window.__LINEUP_THEME__ || { forDay: function () { return null; } };
+var WEEKDAY = window.__LINEUP_WEEKDAY__ || { forDay: function () { return "standard"; }, label: function () { return null; } };
 var ALLEGIANCE = window.__LINEUP_ALLEGIANCE__ || { get: function () { return null; }, set: function () {}, teamLabel: function () { return ""; }, driverList: function () { return { pinned: [], rest: [] }; }, curated: [] };
 
 // Storage schema version (shared with the Cross-Era closure). Phase Two is v3.
 // The hub owns the persisted keys, so it runs the launch-build (v2) migration
 // on boot: any v2 key is copied forward to v3 if the v3 key is absent, so no
 // streak, best, or in-progress grid is lost across the version bump.
-var DATA_VERSION = window.__LINEUP_DATA_VERSION__ || 3;
+var DATA_VERSION = window.__LINEUP_DATA_VERSION__ || 4;
 var NS = window.__LINEUP_NS__ || ("lineupHub:v" + DATA_VERSION + ":");
 var LS = {
   grid: NS + "grid:",               // + UTC day key
-  streakBest: NS + "streakBest",
-  streakToday: NS + "streakToday:", // + UTC day key
+  streakBest: NS + "streakBest",    // Free play best (unchanged)
+  streakToday: NS + "streakToday:", // + UTC day key (Free play today best)
   lastMode: NS + "lastMode",
-  gridHistory: NS + "gridHistory",  // played-days record for the streak view
+  gridHistory: NS + "gridHistory",  // daily grid played-days {day:{score}}
+  gridArchive: NS + "gridArchive",  // archive grid plays {day:{score}}, kept apart
+  ladderHistory: NS + "ladderHistory", // official daily ladder results {day:{rung}}
+  crosseraStats: NS + "crosseraStats", // {played, wins, sumTotal, sumBench}
 };
 
-// One-time forward migration of launch-build (v2) keys. Copies any v2 key to
-// its v3 equivalent when the v3 key is absent, so the version bump never drops
-// a streak, a best, or an in-progress grid. Idempotent and failure-safe.
+// One-time forward migration of older-namespace keys. Copies any key from a
+// prior version to its v4 equivalent when the v4 key is absent, newest source
+// first so nothing is lost and nothing older overwrites something newer. Covers
+// v2 and v3 in one pass, so a device on any prior build migrates cleanly.
 (function migrateStorage() {
   try {
     if (!window.localStorage) return;
-    var oldPrefix = "lineupHub:v2:";
-    var keys = [];
-    for (var i = 0; i < localStorage.length; i++) {
-      var k = localStorage.key(i);
-      if (k && k.indexOf(oldPrefix) === 0) keys.push(k);
-    }
-    keys.forEach(function (k) {
-      var nk = NS + k.slice(oldPrefix.length);
-      if (localStorage.getItem(nk) === null) {
-        var v = localStorage.getItem(k);
-        if (v !== null) localStorage.setItem(nk, v);
+    ["lineupHub:v3:", "lineupHub:v2:"].forEach(function (oldPrefix) {
+      var keys = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf(oldPrefix) === 0) keys.push(k);
       }
+      keys.forEach(function (k) {
+        var nk = NS + k.slice(oldPrefix.length);
+        if (localStorage.getItem(nk) === null) {
+          var v = localStorage.getItem(k);
+          if (v !== null) localStorage.setItem(nk, v);
+        }
+      });
     });
   } catch (e) {}
 })();
@@ -2007,6 +2105,8 @@ function themedPool(rng, gridBias) {
   shuffled.forEach(function (c) { if (!seen[c.id]) { seen[c.id] = 1; out.push(c); } });
   return out;
 }
+// One valid grid from the current rng position (theme-biased if gridBias set),
+// or null if none in the attempt budget. Advances rng like the launch build.
 function tryBuildGrid(rng, gridBias) {
   for (var attempt = 0; attempt < 500; attempt++) {
     var pool = gridBias ? themedPool(rng, gridBias) : shuffle(CLUES, rng);
@@ -2031,23 +2131,93 @@ function tryBuildGrid(rng, gridBias) {
   }
   return null;
 }
-// buildGrid(seedStr[, theme]): unthemed behavior is byte-identical to launch
-// when no theme is passed. A theme weights generation; if a themed day cannot
-// satisfy the invariants, it falls back to unthemed for that day (flagged).
-function buildGrid(seedStr, theme) {
+// Collect up to maxN distinct valid grids from the seeded sequence, for the
+// weekday difficulty picker. Every collected grid already satisfies the hard
+// floor (each cell has at least 2 valid answers), so selection can never
+// produce a degenerate or unsolvable grid.
+function collectGridCandidates(rng, gridBias, maxN) {
+  var out = [], seen = {};
+  for (var attempt = 0; attempt < 1200 && out.length < maxN; attempt++) {
+    var pool = gridBias ? themedPool(rng, gridBias) : shuffle(CLUES, rng);
+    var rows = pool.slice(0, 3);
+    var cats = {};
+    rows.forEach(function (r) { cats[r.cat] = 1; });
+    if (Object.keys(cats).length < 2) continue;
+    var cols = [];
+    for (var i = 3; i < pool.length && cols.length < 3; i++) {
+      var c = pool[i], ok = true;
+      for (var j = 0; j < 3; j++) {
+        if (c.id === rows[j].id || matchCount(rows[j], c) < 2) { ok = false; break; }
+      }
+      if (ok) cols.push(c);
+    }
+    if (cols.length < 3) continue;
+    var ccats = {};
+    cols.forEach(function (c2) { ccats[c2.cat] = 1; });
+    if (Object.keys(ccats).length < 2) continue;
+    if (!fullSolution(rows, cols)) continue;
+    var sig = [rows.map(function (r) { return r.id; }).sort().join(","), cols.map(function (c) { return c.id; }).sort().join(",")].sort().join("||");
+    if (seen[sig]) continue;
+    seen[sig] = 1;
+    out.push({ rows: rows, cols: cols });
+  }
+  return out;
+}
+function gridMedianCount(g) {
+  var counts = [];
+  for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) counts.push(matchCount(g.rows[r], g.cols[c]));
+  counts.sort(function (a, b) { return a - b; });
+  return counts[4]; // median of 9
+}
+// buildGrid(seedStr[, theme][, difficulty]): with no difficulty (or "standard")
+// the behavior is byte-identical to the Phase Two build. "easy"/"hard" is a
+// weekday weighting applied purely by SELECTING among already-valid candidate
+// grids by their median cell answer count, so the hard floor is never touched.
+function buildGrid(seedStr, theme, difficulty) {
   var rng = rngFromSeed("grid|" + seedStr);
   var gridBias = (theme && theme.gridBias && theme.gridBias.length) ? theme.gridBias : null;
-  if (gridBias) {
-    var themed = tryBuildGrid(rng, gridBias);
-    if (themed) { themed.themed = true; themed.fallback = false; return themed; }
-    var fb = tryBuildGrid(rng, null);
-    if (fb) { fb.themed = false; fb.fallback = true; return fb; }
-  } else {
-    var plain = tryBuildGrid(rng, null);
-    if (plain) { plain.themed = false; plain.fallback = false; return plain; }
+  difficulty = (difficulty === "easy" || difficulty === "hard") ? difficulty : "standard";
+
+  if (difficulty === "standard") {
+    if (gridBias) {
+      var themed = tryBuildGrid(rng, gridBias);
+      if (themed) { themed.themed = true; themed.fallback = false; themed.difficulty = "standard"; themed.weekdayFallback = false; return themed; }
+      var fb = tryBuildGrid(rng, null);
+      if (fb) { fb.themed = false; fb.fallback = true; fb.difficulty = "standard"; fb.weekdayFallback = false; return fb; }
+    } else {
+      var plain = tryBuildGrid(rng, null);
+      if (plain) { plain.themed = false; plain.fallback = false; plain.difficulty = "standard"; plain.weekdayFallback = false; return plain; }
+    }
+    return { rows: CLUES.slice(0, 3), cols: CLUES.slice(3, 6), themed: false, fallback: !!gridBias, difficulty: "standard", weekdayFallback: false };
   }
-  // extremely unlikely last resort: first clues in the pool
-  return { rows: CLUES.slice(0, 3), cols: CLUES.slice(3, 6), themed: false, fallback: !!gridBias };
+
+  // easy / hard: gather candidates, prefer the theme bias, then pick by median.
+  var themedFallback = false;
+  var cands = collectGridCandidates(rng, gridBias, 16);
+  if (!cands.length && gridBias) { themedFallback = true; cands = collectGridCandidates(rng, null, 16); }
+  if (!cands.length) {
+    // could not satisfy invariants under weighting: fall back to standard.
+    return buildGridStandardFallback(seedStr, theme, difficulty);
+  }
+  var best = cands[0], bestMed = gridMedianCount(cands[0]);
+  for (var i = 1; i < cands.length; i++) {
+    var m = gridMedianCount(cands[i]);
+    if (difficulty === "easy" ? (m > bestMed) : (m < bestMed)) { best = cands[i]; bestMed = m; }
+  }
+  best.themed = !!gridBias && !themedFallback;
+  best.fallback = themedFallback;
+  best.difficulty = difficulty;
+  best.weekdayFallback = false;
+  return best;
+}
+// A weekday-weighted day that yielded no candidates falls back to standard
+// weighting (and is flagged so the sweep can log it). Should never fire given
+// the generator always yields valid grids, but kept as a hard guarantee.
+function buildGridStandardFallback(seedStr, theme, difficulty) {
+  var g = buildGrid(seedStr, theme, "standard");
+  g.difficulty = difficulty;
+  g.weekdayFallback = true;
+  return g;
 }
 
 /* ---------------- answer difficulty ----------------
@@ -2176,6 +2346,8 @@ function renderHub() {
   }
   var si = gridStreakInfo();
   var gridExtra = [];
+  var wl = WEEKDAY.label(dk);
+  if (wl) gridExtra.push(el("div", { class: "gc-weekday", text: wl }));
   if (si.longest > 0 || si.current > 0) {
     var streakRow = el("div", { class: "gc-streak" }, [
       el("span", { text: "Streak " }, []),
@@ -2197,16 +2369,17 @@ function renderHub() {
     })
   );
 
-  // 2. Streak, "Quick Play".
-  var best = parseInt(lsGet(LS.streakBest) || "0", 10);
-  var today = parseInt(lsGet(LS.streakToday + dk) || "0", 10);
-  var streakStat = best > 0 ? ("Best: " + best + (today > 0 ? ", today: " + today : "")) : null;
+  // 2. Streak, now a shared Daily Ladder (Free play still one tap away inside).
+  var li = ladderStreakInfo();
+  var ladderStat = li.playedToday
+    ? ("Today: rung " + li.todayRung + (li.current >= 2 ? ", " + li.current + " day streak" : ""))
+    : ("Daily ladder #" + gridNumber() + " is up");
   cards.push(
     gameCard({
-      title: "Streak", tag: "Quick Play",
-      desc: "Who had more Cup wins? Tap the driver. Keep going until you miss.",
-      stat: streakStat,
-      onClick: function () { lsSet(LS.lastMode, "streak"); renderStreak(); },
+      title: "Streak", tag: "Daily Ladder",
+      desc: "Who had more Cup wins? Climb the daily ladder. Same rungs for everybody, or hit Free play for endless.",
+      stat: ladderStat,
+      onClick: function () { lsSet(LS.lastMode, "streak"); renderStreak("ladder"); },
     })
   );
 
@@ -2252,7 +2425,9 @@ function allegianceRow() {
     chip = el("button", { class: "alleg-chip", text: "Pick your driver" });
   }
   chip.addEventListener("click", function () { showAllegiancePrompt(false); });
-  return el("div", { class: "alleg-row" }, [chip]);
+  var statsChip = el("button", { class: "alleg-chip", text: "Stats" });
+  statsChip.addEventListener("click", function () { openStats("grid"); });
+  return el("div", { class: "alleg-row" }, [chip, statsChip]);
 }
 
 // Two-letter home-state options (explicit selection only; never inferred).
@@ -2454,11 +2629,12 @@ function gridRaritySummary() {
   var avgRareness = scored.reduce(function (a, p) { return a + (1 - p / 100); }, 0) / scored.length;
   return { pending: false, score: Math.round(avgRareness * 100), garage: garage, rarest: rarest, scoredCount: scored.length };
 }
-function newGridState(seedStr, dk, dev, theme) {
-  var g = buildGrid(seedStr, theme);
+function newGridState(seedStr, dk, dev, theme, difficulty, archive) {
+  var g = buildGrid(seedStr, theme, difficulty);
   return {
-    date: dk, seed: seedStr, dev: !!dev, rows: g.rows, cols: g.cols,
+    date: dk, seed: seedStr, dev: !!dev, archive: !!archive, rows: g.rows, cols: g.cols,
     theme: theme || null, themed: !!g.themed, fallback: !!g.fallback,
+    difficulty: g.difficulty || "standard", weekdayFallback: !!g.weekdayFallback,
     cells: [null, null, null, null, null, null, null, null, null],
     guesses: 9, done: false, sel: -1, feed: null,
   };
@@ -2466,10 +2642,27 @@ function newGridState(seedStr, dk, dev, theme) {
 function initGrid(dev) {
   var dk = dayKey();
   var theme = THEME.forDay(dk);
-  if (dev) { Grid = newGridState("dev|" + Math.random(), dk, true, theme); return; }
+  var difficulty = WEEKDAY.forDay(dk);
+  if (dev) { Grid = newGridState("dev|" + Math.random(), dk, true, theme, difficulty); return; }
   var seedStr = dk;
   var saved = loadGridState(dk);
-  Grid = newGridState(seedStr, dk, false, theme);
+  Grid = newGridState(seedStr, dk, false, theme, difficulty);
+  if (saved && saved.rowIds) {
+    var rows = saved.rowIds.map(clueById), cols = saved.colIds.map(clueById);
+    if (rows.every(Boolean) && cols.every(Boolean)) {
+      Grid.rows = rows; Grid.cols = cols;
+      Grid.cells = saved.cells; Grid.guesses = saved.guesses; Grid.done = saved.done;
+    }
+  }
+}
+// Archive: initialize the grid for a specific past day, played in place. Its
+// progress is saved under the same per-day key, but archive plays are tracked
+// separately and never touch the daily streak.
+function initArchiveGrid(dk) {
+  var theme = THEME.forDay(dk);
+  var difficulty = WEEKDAY.forDay(dk);
+  var saved = loadGridState(dk);
+  Grid = newGridState(dk, dk, false, theme, difficulty, true);
   if (saved && saved.rowIds) {
     var rows = saved.rowIds.map(clueById), cols = saved.colIds.map(clueById);
     if (rows.every(Boolean) && cols.every(Boolean)) {
@@ -2513,22 +2706,33 @@ function gridShareText() {
   return lines.join("\n");
 }
 
-function renderGrid() {
+function renderGrid(archiveDk) {
   activeMode = "grid";
-  var fresh = (!Grid || Grid.date !== dayKey() || (Grid.dev && !DEV));
-  if (fresh) { initGrid(false); GridStats = null; }
-  window.track("game_start", { mode: "grid" });
+  if (archiveDk && archiveDk !== dayKey()) {
+    if (!Grid || Grid.date !== archiveDk || !Grid.archive) { initArchiveGrid(archiveDk); GridStats = null; }
+    window.track("game_start", { mode: "grid_archive" });
+  } else {
+    var fresh = (!Grid || Grid.date !== dayKey() || Grid.archive || (Grid.dev && !DEV));
+    if (fresh) { initGrid(false); GridStats = null; }
+    window.track("game_start", { mode: "grid" });
+  }
   // If the grid is already done (or in progress), pull stats so rarity and the
-  // near-miss reveal can populate. No-op without a backend.
+  // near-miss reveal can populate. Past days are served freely by the worker.
   if (!Grid.dev && (Grid.done || gridCorrectCount() > 0)) refreshGridStats(Grid.date);
   paintGrid();
 }
+function gridNumberForDate(dk) {
+  var ms = Date.parse(dk + "T00:00:00Z");
+  return Math.max(1, Math.round((ms - EPOCH_UTC) / 86400000) + 1);
+}
 function paintGrid() {
   var g = Grid;
+  var gnum = g.archive ? gridNumberForDate(g.date) : gridNumber();
   var head = el("div", { class: "row spread", style: "margin:8px 0 0" }, [
-    el("div", { class: "wordmark display", style: "font-size:20px", text: "Grid #" + gridNumber() + (g.dev ? " · dev" : "") }),
+    el("div", { class: "wordmark display", style: "font-size:20px", text: "Grid #" + gnum + (g.dev ? " · dev" : "") }),
     el("div", { class: "num", style: "font-size:20px;color:" + (g.guesses <= 2 ? "var(--red)" : "var(--cyan)"), text: g.guesses + (g.guesses === 1 ? " miss left" : " misses left") }),
   ]);
+  var archiveFlag = g.archive ? el("div", { class: "archive-flag", text: "ARCHIVE · " + g.date } ) : null;
   var help = el("div", { class: "lede", style: "margin:4px 0 0;font-size:13px", text: "Tap a cell, name a driver who fits the row and the column. Each driver can only be used once. Right answers are free, nine misses ends the day." });
 
   var cellsWrap = el("div", { class: "ggrid" });
@@ -2564,7 +2768,7 @@ function paintGrid() {
     }
   }
 
-  var parts = [el("div", { class: "checker thin" }), head, help, cellsWrap];
+  var parts = [el("div", { class: "checker thin" }), head, archiveFlag, help, cellsWrap];
 
   if (g.feed) {
     parts.push(el("div", { class: "gfeed " + g.feed.cls, html: g.feed.html }));
@@ -2580,7 +2784,16 @@ function paintGrid() {
     parts.push(el("button", { class: "btn ghost", style: "margin-top:6px", text: "Random grid (dev)", onClick: function () { initGrid(true); paintGrid(); } }));
   }
   if (DEV) parts.push(qaPanel(g));
-  setHubScreen("DAILY GRID", el("div", { class: "stack" }, parts));
+  setHubScreen(g.archive ? "PAST GRIDS" : "DAILY GRID", el("div", { class: "stack" }, parts));
+  // One-time Garage Find shimmer, fired when a garage cell is first shown as one.
+  g._shimmered = g._shimmered || {};
+  var nodes = document.querySelectorAll(".gcell");
+  for (var gi = 0; gi < 9; gi++) {
+    if (g.cells[gi]) {
+      var rr = cellRarity(gi);
+      if (rr && rr.garage && !g._shimmered[gi] && nodes[gi]) { g._shimmered[gi] = 1; juiceShimmer(nodes[gi]); }
+    }
+  }
 }
 
 // Editorial QA panel (?dev=1 only): lists every accepted answer per cell so
@@ -2669,11 +2882,13 @@ function submitGuess(d, row, col) {
   var correct = fitR && fitC;
   logAnswer(g, row, col, d, correct);
   window.track("grid_cell_attempt", { correct: correct });
+  g._pop = null; g._shake = null;
   if (correct) {
     var cellIndex = g.sel;
     var lab = labelFor(d);
     g.cells[g.sel] = { n: d.n, dsp: d.d, l: lab };
     g.feed = { cls: "good", html: "<b>Correct.</b> " + lab + ". " + lineFor(lab, g.seed + d.n) };
+    g._pop = g.sel;
     g.sel = -1;
     // aggregation: send the correct answer, then refresh stats for inline rarity.
     if (!g.dev) {
@@ -2683,6 +2898,7 @@ function submitGuess(d, row, col) {
     }
   } else {
     g.guesses -= 1;
+    g._shake = g.sel;
     var miss = !fitR && !fitC
       ? "<b>" + name + "</b> doesn't fit either clue."
       : "Close. <b>" + name + "</b> fits “" + (fitR ? row.label : col.label) + "” but not “" + (fitR ? col.label : row.label) + "”.";
@@ -2692,12 +2908,17 @@ function submitGuess(d, row, col) {
   finishGridIfNeeded();
   if (g.done && !wasDone) {
     window.track("grid_complete", { cells: gridCorrectCount() });
-    window.track("game_complete", { mode: "grid", score: gridCorrectCount() });
-    recordGridPlayed(g.date, gridCorrectCount());
+    window.track("game_complete", { mode: g.archive ? "grid_archive" : "grid", score: gridCorrectCount() });
+    if (g.archive) recordArchivePlayed(g.date, gridCorrectCount());
+    else recordGridPlayed(g.date, gridCorrectCount());
     if (!g.dev) refreshGridStats(g.date);
   }
   saveGridState();
   paintGrid();
+  // juice the resolved cell (no-op under reduced motion)
+  var cellNodes = document.querySelectorAll(".gcell");
+  if (g._pop != null && cellNodes[g._pop]) juicePop(cellNodes[g._pop]);
+  if (g._shake != null && cellNodes[g._shake]) juiceShake(cellNodes[g._shake]);
 }
 
 function gridResults() {
@@ -2741,10 +2962,20 @@ function gridResults() {
     copyBtn
   );
   kids.push(gridRevealNode());
-  kids.push(
-    el("button", { class: "btn ghost", style: "margin-top:10px", text: "Back to games", onClick: goHome }),
-    DEV ? el("button", { class: "btn ghost", style: "margin-top:6px", text: "Random grid (dev)", onClick: function () { initGrid(true); paintGrid(); } }) : null
-  );
+  var g = Grid;
+  var navButtons = [
+    el("button", { class: "btn ghost", style: "margin-top:10px", text: "Stats", onClick: function () { openStats("grid"); } }),
+  ];
+  if (g.archive) {
+    navButtons.push(el("button", { class: "btn ghost", style: "margin-top:6px", text: "Back to past grids", onClick: renderArchive }));
+    navButtons.push(el("button", { class: "btn ghost", style: "margin-top:6px", text: "Back to today's grid", onClick: function () { renderGrid(); } }));
+  } else {
+    // Archive unlocks only once today's grid is finished.
+    navButtons.push(el("button", { class: "btn primary", style: "margin-top:6px", text: "Past grids", onClick: renderArchive }));
+    navButtons.push(el("button", { class: "btn ghost", style: "margin-top:6px", text: "Back to games", onClick: goHome }));
+  }
+  if (DEV && !g.archive) navButtons.push(el("button", { class: "btn ghost", style: "margin-top:6px", text: "Random grid (dev)", onClick: function () { initGrid(true); paintGrid(); } }));
+  kids.push.apply(kids, navButtons);
   return el("div", {}, kids);
 }
 // Near-miss reveal. For each cell, the full valid answer set ranked by rarity
@@ -2775,7 +3006,7 @@ function gridRevealNode() {
       }
       var header = el("div", { class: "reveal-cell-h" + (got ? "" : " miss"),
         text: (got ? "" : "You were close to: ") + row.label + " x " + col.label });
-      var listEl = el("div", { class: "answers" });
+      var listEl = el("div", { class: "answers j-stagger", style: "animation-delay:" + Math.min(idx * 45, 360) + "ms" });
       answers.slice(0, 40).forEach(function (a, ai) {
         var isMine = mine && a.name === mine;
         var isDeepest = ai === 0;
@@ -2868,35 +3099,132 @@ function pickPair(prevPair, round) {
   }
   return [SPOOL[0], SPOOL[SPOOL.length - 1]];
 }
+/* ---------------- daily ladder (seeded, shared by every player) ----------------
+   The same pair rules and difficulty bands as Free play, but driven by an rng
+   seeded from the UTC day key instead of session randomness, so every player in
+   the world gets the identical rungs in the identical order. Pre-generates well
+   over 60 rungs so no one can outrun the ladder. Invariants match Free play: no
+   equal-win pairs, no driver repeating from the immediately previous rung, and
+   the pool already restricts sourcing (legends only from the legends block, no
+   pre-1972 MSS drivers). No worker involvement; scores are local only. */
+function ladderBandFor(round, rng) {
+  if (round <= 1) return "easy";
+  if (round <= 4) return "medium";
+  return rng() < 0.75 ? "hard" : "medium";
+}
+function ladderPickPair(prevPair, round, rng) {
+  var band = ladderBandFor(round, rng);
+  var prev = prevPair ? [prevPair[0].n, prevPair[1].n] : [];
+  for (var tries = 0; tries < 600; tries++) {
+    var a = SPOOL[Math.floor(rng() * SPOOL.length)];
+    var b = SPOOL[Math.floor(rng() * SPOOL.length)];
+    if (a.n === b.n || a.w === b.w) continue;
+    if (prev.indexOf(a.n) >= 0 || prev.indexOf(b.n) >= 0) continue;
+    var gap = Math.abs(a.w - b.w);
+    if (tries < 450 && !inBand(gap, band)) continue;
+    return [a, b];
+  }
+  return [SPOOL[0], SPOOL[SPOOL.length - 1]];
+}
+var LADDER_RUNGS = 64; // at least 60
+function dailyLadder(dayStr) {
+  var rng = rngFromSeed("ladder|" + dayStr);
+  var rungs = [], prev = null;
+  for (var i = 0; i < LADDER_RUNGS; i++) {
+    var pair = ladderPickPair(prev, i, rng);
+    rungs.push(pair);
+    prev = pair;
+  }
+  return rungs;
+}
+function loadLadderHistory() { try { return JSON.parse(lsGet(LS.ladderHistory) || "{}") || {}; } catch (e) { return {}; } }
+// Records the official result for a day only if none exists yet (first completed
+// run of the day). Returns true if THIS run became the official one.
+function recordLadderResult(dk, rung) {
+  var h = loadLadderHistory();
+  if (h[dk] === undefined) { h[dk] = { rung: rung }; lsSet(LS.ladderHistory, JSON.stringify(h)); return true; }
+  return false;
+}
+function ladderStreakInfo() {
+  var h = loadLadderHistory();
+  var today = todayUTCms();
+  var playedToday = h[keyForMs(today)] !== undefined;
+  var current = 0;
+  var anchor = playedToday ? 0 : (h[keyForMs(today - 86400000)] !== undefined ? 1 : -1);
+  if (anchor >= 0) { var i = anchor; while (h[keyForMs(today - i * 86400000)] !== undefined) { current++; i++; } }
+  var days = Object.keys(h).filter(function (k) { return /^\d{4}-\d{2}-\d{2}$/.test(k); }).sort();
+  var longest = 0, run = 0, prev = null, bestRung = 0;
+  days.forEach(function (dstr) {
+    var ms = Date.parse(dstr + "T00:00:00Z");
+    if (prev !== null && ms - prev === 86400000) run++; else run = 1;
+    if (run > longest) longest = run;
+    prev = ms;
+    if ((h[dstr].rung || 0) > bestRung) bestRung = h[dstr].rung || 0;
+  });
+  if (current > longest) longest = current;
+  return { current: current, longest: longest, playedToday: playedToday, bestRung: bestRung, todayRung: playedToday ? h[keyForMs(today)].rung : null, played: days.length, history: h };
+}
 function streakYears(d) {
   if (!d.y0 || !d.y1) return "Cup career record";
   return d.y1 >= new Date().getFullYear() ? "Cup: since " + d.y0 : "Cup: " + d.y0 + " to " + d.y1;
 }
-function renderStreak() {
+// renderStreak(mode): "ladder" (the featured daily, default) or "free" (the
+// original unlimited random mode, unchanged). Practice runs of the ladder never
+// overwrite the official first-run score.
+function renderStreak(mode) {
   if (!SPOOL.length) { renderHub(); return; }
   activeMode = "streak";
-  window.track("game_start", { mode: "streak" });
-  Streak = { n: 0, pair: pickPair(null, 0), locked: false, round: 0 };
+  mode = mode || "ladder";
+  window.track("game_start", { mode: mode === "ladder" ? "streak_ladder" : "streak_free" });
+  if (mode === "ladder") {
+    var dk = dayKey();
+    var rungs = dailyLadder(dk);
+    var official = loadLadderHistory()[dk];
+    Streak = { mode: "ladder", day: dk, rungs: rungs, idx: 0, n: 0, pair: rungs[0], locked: false, practice: official !== undefined };
+  } else {
+    Streak = { mode: "free", n: 0, pair: pickPair(null, 0), locked: false, round: 0 };
+  }
   paintStreak();
 }
 function paintStreak() {
   var s = Streak;
-  var best = parseInt(lsGet(LS.streakBest) || "0", 10);
+  var isLadder = s.mode === "ladder";
+  var barRight;
+  if (isLadder) {
+    var li = ladderStreakInfo();
+    barRight = el("div", { class: "muted", style: "font-size:13px;text-align:right", text: "Rung " + s.n + (li.longest ? " · best " + li.bestRung : "") });
+  } else {
+    var best = parseInt(lsGet(LS.streakBest) || "0", 10);
+    barRight = el("div", { class: "muted", style: "font-size:13px;text-align:right", text: "Best: " + Math.max(best, s.n) });
+  }
   var bar = el("div", { class: "streakbar" }, [
     el("div", {}, [
-      el("div", { class: "label muted", style: "font-size:11px;letter-spacing:.1em;text-transform:uppercase", text: "Streak" }),
-      el("div", { class: "sb-n", text: String(s.n) }),
+      el("div", { class: "label muted", style: "font-size:11px;letter-spacing:.1em;text-transform:uppercase", text: isLadder ? "Daily ladder · rung" : "Free play" }),
+      el("div", { class: "sb-n", id: "streakN", text: String(s.n) }),
     ]),
-    el("div", { class: "muted", style: "font-size:13px;text-align:right", text: "Best: " + Math.max(best, s.n) }),
+    barRight,
   ]);
-  var cardA = duelCard(s.pair[0]);
-  var cardB = duelCard(s.pair[1]);
+  var subline = isLadder
+    ? (s.practice ? "Practice run. Your official score is locked for today." : "Ladder #" + gridNumber() + ". Same rungs for everybody.")
+    : "Career Cup Series wins. Tap your pick.";
+  // Mode switch + stats, shown only at the start of a run so play stays clean.
+  var startRow = null;
+  if (s.n === 0) {
+    startRow = el("div", { class: "actions", style: "margin-top:12px" }, [
+      isLadder
+        ? el("button", { class: "btn ghost", text: "Free play", onClick: function () { renderStreak("free"); } })
+        : el("button", { class: "btn ghost", text: "Daily ladder", onClick: function () { renderStreak("ladder"); } }),
+      el("button", { class: "btn ghost", text: "Stats", onClick: function () { openStats("streak"); } }),
+    ]);
+  }
   setHubScreen("STREAK",
     el("div", { class: "checker thin" }),
     bar,
+    isLadder && s.practice ? el("div", { class: "practice-flag", text: "PRACTICE" }) : null,
     el("div", { class: "duelq", text: "Who had more Cup wins?" }),
-    el("div", { class: "duelsub", text: "Career Cup Series wins. Tap your pick." }),
-    el("div", { class: "duel" }, [cardA, el("div", { class: "vsline", text: "VS" }), cardB])
+    el("div", { class: "duelsub", text: subline }),
+    el("div", { class: "duel" }, [duelCard(s.pair[0]), el("div", { class: "vsline", text: "VS" }), duelCard(s.pair[1])]),
+    startRow
   );
 }
 function duelCard(d) {
@@ -2915,9 +3243,6 @@ function answerStreak(pick, btn) {
   var a = s.pair[0], b = s.pair[1];
   var other = pick.n === a.n ? b : a;
   var correct = pick.w > other.w;
-  // reveal both win counts, mark the pick (and the actual answer on a miss).
-  // Match nodes by the raw name kept on data-nm, not the displayed text, so
-  // canonical display names never break the lookup.
   var nodes = document.querySelectorAll(".duelcard");
   for (var i = 0; i < nodes.length; i++) {
     var nm = nodes[i].getAttribute("data-nm");
@@ -2927,24 +3252,67 @@ function answerStreak(pick, btn) {
     else if (!correct) nodes[i].classList.add("right");
   }
   if (correct) {
-    s.n += 1; s.round += 1;
-    var dk = dayKey();
-    var today = parseInt(lsGet(LS.streakToday + dk) || "0", 10);
-    if (s.n > today) lsSet(LS.streakToday + dk, String(s.n));
-    var best = parseInt(lsGet(LS.streakBest) || "0", 10);
-    if (s.n > best) lsSet(LS.streakBest, String(s.n));
-    setTimeout(function () {
-      s.pair = pickPair(s.pair, s.round); s.locked = false; paintStreak();
-    }, 1400);
+    s.n += 1;
+    juiceRungClimb(); // visible rung climb (reduced-motion aware)
+    if (s.mode === "ladder") {
+      s.idx += 1;
+      if (s.idx >= s.rungs.length) { setTimeout(function () { streakLadderOver(true); }, 1200); return; }
+      setTimeout(function () { s.pair = s.rungs[s.idx]; s.locked = false; paintStreak(); }, 1400);
+    } else {
+      s.round += 1;
+      var dk = dayKey();
+      var today = parseInt(lsGet(LS.streakToday + dk) || "0", 10);
+      if (s.n > today) lsSet(LS.streakToday + dk, String(s.n));
+      var best = parseInt(lsGet(LS.streakBest) || "0", 10);
+      if (s.n > best) lsSet(LS.streakBest, String(s.n));
+      setTimeout(function () { s.pair = pickPair(s.pair, s.round); s.locked = false; paintStreak(); }, 1400);
+    }
   } else {
-    setTimeout(function () { streakGameOver(pick, other); }, 1400);
+    setTimeout(function () { s.mode === "ladder" ? streakLadderOver(false) : streakGameOver(pick, other); }, 1400);
   }
+}
+// Ladder game over. The rung reached is the number answered correctly. The
+// first completed run of the day becomes the official score; later runs are
+// clearly labeled practice and never overwrite it.
+function streakLadderOver(cleared) {
+  var s = Streak;
+  var rung = s.n;
+  var isOfficial = recordLadderResult(s.day, rung);
+  window.track("streak_end", { score: rung });
+  window.track("game_complete", { mode: "streak_ladder", score: rung });
+  var li = ladderStreakInfo();
+  var dayNo = gridNumber();
+  var reached = cleared ? "Cleared all " + s.rungs.length + " rungs" : "Made it to rung " + rung;
+  var lines = ["THE LINEUP: DAILY LADDER", "Ladder #" + dayNo, reached];
+  if (li.current >= 2) lines.push("🔥 " + li.current + " day ladder streak");
+  var share = lines.join("\n") + allegianceBadgeLine() + "\n" + GAME_URL;
+  var copyBtn = el("button", { class: "btn ghost", text: "Copy share text" });
+  copyBtn.addEventListener("click", function () { window.track("share_click", { mode: "streak" }); copyText(share, copyBtn); });
+  setHubScreen("STREAK",
+    el("div", { class: "checker" }),
+    el("div", { class: "banner " + (rung >= 10 ? "win" : "miss"), style: "margin-top:12px" }, [
+      el("div", { class: "verdict display", text: cleared ? "LADDER CLEARED" : "RUNG " + rung }),
+      el("div", { class: "sub", text: isOfficial ? "Today's official Daily Ladder score." : "Practice run. Your official score stands." }),
+    ]),
+    el("div", { class: "sweep", style: "margin:8px 0" }, [
+      el("div", { class: "grid" }, [
+        statBox(String(li.todayRung != null ? li.todayRung : rung), "Official rung"),
+        statBox(String(li.bestRung), "Best rung ever"),
+      ]),
+    ]),
+    el("div", { class: "sharebox", text: share }),
+    el("button", { class: "btn primary", style: "margin-top:4px", text: "Practice again", onClick: function () { window.track("game_replay", { mode: "streak" }); renderStreak("ladder"); } }),
+    copyBtn,
+    el("button", { class: "btn ghost", style: "margin-top:6px", text: "Free play", onClick: function () { renderStreak("free"); } }),
+    el("button", { class: "btn ghost", style: "margin-top:6px", text: "Stats", onClick: function () { openStats("streak"); } }),
+    el("button", { class: "btn ghost", style: "margin-top:6px", text: "Back to games", onClick: goHome })
+  );
 }
 function streakGameOver(pick, other) {
   var s = Streak;
   var best = parseInt(lsGet(LS.streakBest) || "0", 10);
   window.track("streak_end", { score: s.n });
-  window.track("game_complete", { mode: "streak", score: s.n });
+  window.track("game_complete", { mode: "streak_free", score: s.n });
   var pickN = dn(pick.n), otherN = dn(other.n);
   var lostLine = "Lost on " + pickN + " vs " + otherN + (/\.$/.test(otherN) ? "" : ".");
   var share = "THE LINEUP STREAK\nI got " + s.n + " straight.\n" + lostLine + "\nNot proud. Playing again." + allegianceBadgeLine() + "\n" + GAME_URL;
@@ -2959,12 +3327,13 @@ function streakGameOver(pick, other) {
     el("div", { class: "sweep", style: "margin:8px 0" }, [
       el("div", { class: "grid" }, [
         statBox(String(s.n), "This run"),
-        statBox(String(Math.max(best, s.n)), "Best ever"),
+        statBox(String(Math.max(best, s.n)), "Free play best"),
       ]),
     ]),
     el("div", { class: "sharebox", text: share }),
-    el("button", { class: "btn primary", style: "margin-top:4px", text: "Run it back", onClick: function () { window.track("game_replay", { mode: "streak" }); renderStreak(); } }),
+    el("button", { class: "btn primary", style: "margin-top:4px", text: "Run it back", onClick: function () { window.track("game_replay", { mode: "streak" }); renderStreak("free"); } }),
     copyBtn,
+    el("button", { class: "btn ghost", style: "margin-top:6px", text: "Daily ladder", onClick: function () { renderStreak("ladder"); } }),
     el("button", { class: "btn ghost", style: "margin-top:6px", text: "Back to games", onClick: goHome })
   );
 }
@@ -2978,10 +3347,220 @@ function allegianceBadgeLine() {
 }
 window.__LINEUP_BADGE__ = allegianceBadgeLine;
 
+/* =========================================================================
+   PHASE THREE: juice, stats modal, Cross-Era stat recording, and archive.
+   ========================================================================= */
+function reducedMotion() {
+  return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+// Juice helpers. The CSS also hard-disables these under reduced motion, so
+// adding a class is always safe; none of them set a hidden initial state.
+function juiceClass(node, cls, ms) {
+  if (!node || reducedMotion()) return;
+  node.classList.remove(cls);
+  void node.offsetWidth; // restart the animation
+  node.classList.add(cls);
+  setTimeout(function () { if (node) node.classList.remove(cls); }, ms || 500);
+}
+function juicePop(node) { juiceClass(node, "j-pop", 300); }
+function juiceShake(node) { juiceClass(node, "j-shake", 340); }
+function juiceShimmer(node) { juiceClass(node, "j-shimmer", 760); }
+function juiceRungClimb() { juiceClass(document.getElementById("streakN"), "j-climb", 400); }
+function juiceStagger(nodes) {
+  if (reducedMotion()) return;
+  nodes.forEach(function (n, i) {
+    if (!n) return;
+    n.style.animationDelay = Math.min(i * 45, 360) + "ms";
+    n.classList.add("j-stagger");
+  });
+}
+
+/* ---------------- stats data ---------------- */
+function isDayKey(k) { return /^\d{4}-\d{2}-\d{2}$/.test(k); }
+function loadGridArchive() { try { return JSON.parse(lsGet(LS.gridArchive) || "{}") || {}; } catch (e) { return {}; } }
+function recordArchivePlayed(dk, score) {
+  var h = loadGridArchive();
+  var prev = h[dk] ? h[dk].score : -1;
+  if (score > prev) { h[dk] = { score: score }; lsSet(LS.gridArchive, JSON.stringify(h)); }
+}
+function gridStatsData() {
+  var h = loadGridHistory();
+  var days = Object.keys(h).filter(isDayKey);
+  var full = days.filter(function (d) { return h[d].score === 9; }).length;
+  var dist = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  days.forEach(function (d) { var s = h[d].score; if (s >= 0 && s <= 9) dist[s]++; });
+  var si = gridStreakInfo();
+  var arch = loadGridArchive();
+  return {
+    played: days.length, full: full, completionRate: days.length ? Math.round(100 * full / days.length) : 0,
+    current: si.current, longest: si.longest, dist: dist, archivePlayed: Object.keys(arch).filter(isDayKey).length,
+  };
+}
+function ladderStatsData() {
+  var li = ladderStreakInfo();
+  var h = li.history, buckets = { "0 to 4": 0, "5 to 9": 0, "10 to 14": 0, "15 to 19": 0, "20+": 0 };
+  Object.keys(h).filter(isDayKey).forEach(function (d) {
+    var r = h[d].rung || 0;
+    var k = r < 5 ? "0 to 4" : r < 10 ? "5 to 9" : r < 15 ? "10 to 14" : r < 20 ? "15 to 19" : "20+";
+    buckets[k]++;
+  });
+  return { played: li.played, bestRung: li.bestRung, todayRung: li.todayRung, current: li.current, longest: li.longest, buckets: buckets, freeBest: parseInt(lsGet(LS.streakBest) || "0", 10) };
+}
+function crossEraStatsData() {
+  var s; try { s = JSON.parse(lsGet(LS.crosseraStats) || "null"); } catch (e) {}
+  s = s || { played: 0, wins: 0, sumTotal: 0, sumBench: 0 };
+  return { played: s.played, wins: s.wins, losses: s.played - s.wins, avgWins: s.played ? s.sumTotal / s.played : 0, avgBench: s.played ? s.sumBench / s.played : 0 };
+}
+// Called by the Cross-Era closure on every finished matchup (daily or free).
+function recordCrossEra(result) {
+  var s; try { s = JSON.parse(lsGet(LS.crosseraStats) || "null"); } catch (e) {}
+  s = s || { played: 0, wins: 0, sumTotal: 0, sumBench: 0 };
+  s.played += 1; if (result.win) s.wins += 1;
+  s.sumTotal += result.total; s.sumBench += result.benchmark;
+  lsSet(LS.crosseraStats, JSON.stringify(s));
+}
+window.__LINEUP_RECORD_CROSSERA__ = recordCrossEra;
+
+/* ---------------- stats modal ---------------- */
+function statCell(v, k) { return el("div", { class: "stats-cell" }, [el("div", { class: "v", text: String(v) }), el("div", { class: "k", text: k })]); }
+function distBars(labels, counts, hotIndex) {
+  var max = Math.max.apply(null, counts.concat([1]));
+  var rows = labels.map(function (lbl, i) {
+    var w = Math.round((counts[i] / max) * 100);
+    return el("div", { class: "dist-row" }, [
+      el("div", { class: "lbl", text: String(lbl) }),
+      el("div", { class: "dist-bar" + (i === hotIndex ? " hot" : ""), style: "width:" + Math.max(w, counts[i] ? 6 : 2) + "%" }),
+      el("div", { class: "cnt", text: String(counts[i]) }),
+    ]);
+  });
+  return el("div", { class: "dist" }, rows);
+}
+function gridStatsBody() {
+  var d = gridStatsData();
+  if (!d.played) return el("div", { class: "stats-empty", text: "No grids played yet. Come back after today's grid." });
+  var hot = d.dist.indexOf(Math.max.apply(null, d.dist));
+  return el("div", {}, [
+    el("div", { class: "stats-grid" }, [
+      statCell(d.played, "Played"),
+      statCell(d.completionRate + "%", "9/9 rate"),
+      statCell(d.current, "Streak"),
+      statCell(d.longest, "Longest"),
+      statCell(d.full, "Clean sweeps"),
+      statCell(d.archivePlayed, "Archive played"),
+    ]),
+    el("div", { class: "reveal-cell-h", text: "Cells correct per game" }),
+    distBars([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], d.dist, hot),
+    el("div", { class: "stats-note", text: "Archive plays are counted here but never affect your daily streak." }),
+  ]);
+}
+function streakStatsBody() {
+  var d = ladderStatsData();
+  if (!d.played && !d.freeBest) return el("div", { class: "stats-empty", text: "No ladders played yet. Climb today's Daily Ladder." });
+  var keys = ["0 to 4", "5 to 9", "10 to 14", "15 to 19", "20+"];
+  var counts = keys.map(function (k) { return d.buckets[k]; });
+  return el("div", {}, [
+    el("div", { class: "stats-grid" }, [
+      statCell(d.played, "Ladders"),
+      statCell(d.bestRung, "Best rung"),
+      statCell(d.todayRung != null ? d.todayRung : "-", "Today"),
+      statCell(d.current, "Ladder streak"),
+      statCell(d.longest, "Longest"),
+      statCell(d.freeBest, "Free play best"),
+    ]),
+    el("div", { class: "reveal-cell-h", text: "Ladder results" }),
+    distBars(keys, counts, -1),
+  ]);
+}
+function crossEraStatsBody() {
+  var d = crossEraStatsData();
+  if (!d.played) return el("div", { class: "stats-empty", text: "No matchups played yet. Beat a real team in Cross-Era." });
+  return el("div", {}, [
+    el("div", { class: "stats-grid" }, [
+      statCell(d.played, "Played"),
+      statCell(d.wins + "-" + d.losses, "Vs benchmark"),
+      statCell(Math.round(100 * d.wins / d.played) + "%", "Win rate"),
+      statCell(d.avgWins.toFixed(1), "Avg your wins"),
+      statCell(d.avgBench.toFixed(1), "Avg benchmark"),
+    ]),
+    el("div", { class: "stats-note", text: "Counts every matchup, daily and free play." }),
+  ]);
+}
+function openStats(mode) {
+  mode = (mode === "streak" || mode === "crossera") ? mode : "grid";
+  var overlay = el("div", { class: "modal-overlay" });
+  function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); document.removeEventListener("keydown", onKey); }
+  function onKey(e) { if (e.key === "Escape") close(); }
+  var body = el("div", {});
+  var tabDefs = [["grid", "Grid"], ["streak", "Streak"], ["crossera", "Cross-Era"]];
+  var tabsWrap = el("div", { class: "stats-tabs" });
+  function paint(m) {
+    clear(tabsWrap);
+    tabDefs.forEach(function (t) {
+      var b = el("button", { class: "stats-tab" + (t[0] === m ? " on" : ""), text: t[1] });
+      b.addEventListener("click", function () { paint(t[0]); });
+      mount(tabsWrap, b);
+    });
+    clear(body);
+    mount(body, m === "grid" ? gridStatsBody() : m === "streak" ? streakStatsBody() : crossEraStatsBody());
+  }
+  var closeBtn = el("button", { class: "modal-x", text: "×" });
+  closeBtn.addEventListener("click", close);
+  var panel = el("div", { class: "modal-panel" }, [
+    el("div", { class: "modal-head" }, [el("div", { class: "modal-title display", text: "Stats" }), closeBtn]),
+    tabsWrap, body,
+  ]);
+  overlay.appendChild(panel);
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
+  document.addEventListener("keydown", onKey);
+  document.body.appendChild(overlay);
+  paint(mode);
+  window.track("stats_open", { mode: mode });
+}
+window.__LINEUP_OPEN_STATS__ = openStats;
+
+/* ---------------- Grid archive ---------------- */
+// The list of past grids, Grid #1 through yesterday, unlocked only after today's
+// grid is finished so it never cannibalizes the daily habit. Played in place via
+// the existing date machinery; archive plays never touch the daily streak.
+function archiveUnlocked() {
+  var todaySave = loadGridState(dayKey());
+  return !!(todaySave && todaySave.done);
+}
+function renderArchive() {
+  activeMode = "grid";
+  var todayNo = gridNumber();
+  var arch = loadGridArchive();
+  var items = [];
+  // Newest first: yesterday (todayNo - 1) down to Grid #1.
+  for (var n = todayNo - 1; n >= 1; n--) {
+    (function (num) {
+      var ms = EPOCH_UTC + (num - 1) * 86400000;
+      var dk = keyForMs(ms);
+      var played = arch[dk];
+      var item = el("button", { class: "archive-item" }, [
+        el("div", {}, [
+          el("div", { class: "an", text: "Grid #" + num }),
+          el("div", { class: "ad", text: dk + (played ? "  played " + played.score + "/9" : "") }),
+        ]),
+        played ? el("div", { class: "as", text: played.score + "/9" }) : el("div", { class: "ad", text: "Play" }),
+      ]);
+      item.addEventListener("click", function () { renderGrid(dk); });
+      items.push(item);
+    })(n);
+  }
+  setHubScreen("PAST GRIDS",
+    el("div", { class: "checker thin" }),
+    el("div", { class: "wordmark display", style: "font-size:20px;margin-top:6px", text: "Past grids" }),
+    el("div", { class: "lede", style: "font-size:13px", text: "Every grid from #1 through yesterday. Archive plays are tracked separately and never touch your daily streak." }),
+    items.length ? el("div", { class: "archive-list" }, items) : el("div", { class: "stats-empty", text: "No past grids yet." }),
+    el("button", { class: "btn ghost", style: "margin-top:8px", text: "Back to today's grid", onClick: function () { renderGrid(); } })
+  );
+}
+
 /* ---------------- boot ---------------- */
 // Internal inspection hook for the Grid (console/testing only, not wired to
 // any UI). Kept for editorial and QA use; see the handoff note.
-window.__GRID_DEBUG__ = { CLUES: CLUES, GPOOL: GPOOL, buildGrid: buildGrid, fullSolution: fullSolution, suggest: suggest, labelFor: labelFor, matchCount: matchCount, themeForDay: THEME.forDay };
+window.__GRID_DEBUG__ = { CLUES: CLUES, GPOOL: GPOOL, buildGrid: buildGrid, fullSolution: fullSolution, suggest: suggest, labelFor: labelFor, matchCount: matchCount, themeForDay: THEME.forDay, weekdayForDay: WEEKDAY.forDay };
 // Read-only verification hooks for verify.js, on the same object as the
 // Cross-Era sweep. Accessors only; no game behavior changes.
 if (window.__CROSSERA__) {
@@ -2991,6 +3570,8 @@ if (window.__CROSSERA__) {
   window.__CROSSERA__.gridSolve = fullSolution;
   window.__CROSSERA__.gridMatch = matchCount;
   window.__CROSSERA__.themeForDay = THEME.forDay;
+  window.__CROSSERA__.weekdayForDay = WEEKDAY.forDay;
+  window.__CROSSERA__.dailyLadder = dailyLadder;
 }
 window.__HUB__ = { home: renderHub, allegiancePrompt: showAllegiancePrompt };
 // First visit after this update shows the allegiance prompt once; afterward it
