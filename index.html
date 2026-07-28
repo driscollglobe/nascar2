@@ -524,6 +524,42 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
   }
   window.__LINEUP_CANON__ = { name: canonFull, short: canonShort, normKey: normKey, table: CANON };
 
+/* =========================================================================
+   Venue rename canonicalization (window.VENUE_CANON).
+
+   MSS records a physical track under whatever name was current at the time, so
+   one facility can appear under several names across eras (Phoenix
+   International Raceway / ISM Raceway / Phoenix Raceway). Left alone this breaks
+   track clues both ways: a retired name shown as the clue can read wrong, and a
+   "won at N tracks" threshold could count one facility more than once.
+
+   RULES (conservative):
+     - Merge ONLY documented renames of the SAME physical facility.
+     - NEVER merge distinct facilities that share a city or a similar name.
+       When in any doubt, do not merge (see the change log NEEDS HUMAN REVIEW).
+     - display is the track's current public name. Clue text renders display;
+       matching accepts every alias.
+
+   In the current MSS pull every facility appears under exactly ONE name, so
+   there are ZERO facility-merges to make. Three venues are recorded under a
+   retired name and are given their current public display name (recorded name
+   kept as an alias so matching is unaffected). Each mapping's comment states the
+   documented rename it reflects. Editorial confirms the table via the QA export;
+   their sign-off is the completeness gate. Full venue list and the review
+   candidates (Gateway/WWT, IMS oval vs road course) are in the change log. */
+  var VENUE_CANON = {
+    // Phoenix International Raceway -> ISM Raceway (2018) -> Phoenix Raceway (2021).
+    "ISM Raceway": { display: "Phoenix Raceway", aliases: ["ISM Raceway"] },
+    // Dover International Speedway -> Dover Motor Speedway (2022).
+    "Dover International Speedway": { display: "Dover Motor Speedway", aliases: ["Dover International Speedway"] },
+    // Richmond International Raceway -> Richmond Raceway (2018).
+    "Richmond International Raceway": { display: "Richmond Raceway", aliases: ["Richmond International Raceway"] }
+  };
+  function venueDisplay(raw) { var e = VENUE_CANON[raw]; return e ? e.display : raw; }
+  // Canonical identity for dedup: same facility resolves to the same key.
+  function venueKey(raw) { var e = VENUE_CANON[raw]; return e ? e.display : raw; }
+  window.__LINEUP_VENUE__ = { table: VENUE_CANON, display: venueDisplay, key: venueKey };
+
   // Public game URL, appended to every share string across all three modes.
   // Single source of truth: change this one line to repoint every share.
   window.__LINEUP_URL__ = "https://driscollglobe.github.io/nascar2/";
@@ -1998,6 +2034,7 @@ function dn(name) { return CANON.name(name); }
 var API = window.__LINEUP_API__ || { enabled: function () { return false; }, postAnswer: function () { return Promise.resolve(null); }, getStats: function () { return Promise.resolve(null); } };
 var THEME = window.__LINEUP_THEME__ || { forDay: function () { return null; } };
 var WEEKDAY = window.__LINEUP_WEEKDAY__ || { forDay: function () { return "standard"; }, label: function () { return null; } };
+var VENUE = window.__LINEUP_VENUE__ || { display: function (x) { return x; }, key: function (x) { return x; }, table: {} };
 var ALLEGIANCE = window.__LINEUP_ALLEGIANCE__ || { get: function () { return null; }, set: function () {}, teamLabel: function () { return ""; }, driverList: function () { return { pinned: [], rest: [] }; }, curated: [] };
 
 // Storage schema version (shared with the Cross-Era closure). Phase Two is v3.
@@ -2521,7 +2558,10 @@ var CLUES = (function () {
   Object.keys(trackCount).forEach(function (k) {
     if (trackCount[k] < 6) return;
     var ti = +k;
-    list.push(clue("track:" + ti, "track", "Won at " + GF.tracks[ti], function (dr) { return has(dr.t || [], ti); }, "positive", "POSITIVE-EVIDENCE"));
+    // Clue text renders the venue's current public display name; matching stays
+    // by track index (each recorded name is one index), which already accepts a
+    // driver whose win is stored under the retired alias.
+    list.push(clue("track:" + ti, "track", "Won at " + VENUE.display(GF.tracks[ti]), function (dr) { return has(dr.t || [], ti); }, "positive", "POSITIVE-EVIDENCE"));
   });
   // Easier verifiable types (beta feedback): first-letter clues drawn from the
   // canonical names, added as ordinary candidates. Positive and complete.
@@ -2564,6 +2604,18 @@ function clueById(id) { for (var i = 0; i < CLUES.length; i++) if (CLUES[i].id =
 function matchCount(r, c) {
   var n = 0;
   for (var i = 0; i < GPOOL.length; i++) if (r.test(GPOOL[i]) && c.test(GPOOL[i])) n++;
+  return n;
+}
+// Distinct physical facilities a driver won at, deduplicated through the venue
+// canon so one facility recorded under two era-names counts once. No clue uses
+// a "won at N tracks" threshold today; this is the mechanism required before
+// one ever does (and it is exercised by verify.js).
+function driverTrackCount(dr) {
+  var seen = {}, n = 0;
+  (dr.t || []).forEach(function (ti) {
+    var k = VENUE.key(GF.tracks[ti]);
+    if (!seen[k]) { seen[k] = 1; n++; }
+  });
   return n;
 }
 
@@ -4277,7 +4329,7 @@ window.__LINEUP_SHARE_URL__ = shareURLFor;
 // current or future day's answers. verify.js and make-manifest.js set LINEUP_QA
 // in their sandbox, so the harnesses and the manifest generator are unaffected.
 if (QA) {
-  window.__GRID_DEBUG__ = { CLUES: CLUES, GPOOL: GPOOL, buildGrid: buildGrid, fullSolution: fullSolution, suggest: suggest, labelFor: labelFor, matchCount: matchCount, themeForDay: THEME.forDay, weekdayForDay: WEEKDAY.forDay, gridPlanForDay: gridPlanForDay, launchWeek: LAUNCH_WEEK_SEEDS, missFeedback: missFeedback };
+  window.__GRID_DEBUG__ = { CLUES: CLUES, GPOOL: GPOOL, buildGrid: buildGrid, fullSolution: fullSolution, suggest: suggest, labelFor: labelFor, matchCount: matchCount, themeForDay: THEME.forDay, weekdayForDay: WEEKDAY.forDay, gridPlanForDay: gridPlanForDay, launchWeek: LAUNCH_WEEK_SEEDS, missFeedback: missFeedback, venue: VENUE, driverTrackCount: driverTrackCount, tracks: GF.tracks };
   if (window.__CROSSERA__) {
     window.__CROSSERA__.streakPool = SPOOL;
     window.__CROSSERA__.gridFacts = GF;
