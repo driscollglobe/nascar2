@@ -410,6 +410,32 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
   .modal-panel { animation: none; }
   .j-pop, .j-shake, .j-shimmer, .j-climb, .j-stagger { animation: none !important; }
 }
+
+/* ---- Phase Four: daily mission, Garage Sweep, rules, countdown ---- */
+.mission-banner { width: 100%; text-align: left; background: var(--panel2); border: 1px solid var(--line2); border-radius: var(--radius); padding: 12px 14px; margin: 10px 0 2px; cursor: pointer; color: var(--text); font-family: var(--body); }
+.mission-banner .mb-line { font-family: var(--display); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; font-size: 14px; color: var(--cyan); }
+.mission-banner .mb-dots { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.mission-banner .mb-dot { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line2); color: var(--muted); }
+.mission-banner .mb-dot.on { color: #14110a; background: var(--green); border-color: var(--green); }
+.mission-banner.swept { border-color: var(--amber); background: linear-gradient(180deg, rgba(242,229,0,0.10), var(--panel2)); }
+.mission-banner .mb-sweep { margin-top: 8px; font-family: var(--display); font-weight: 700; letter-spacing: 0.06em; font-size: 13px; color: var(--amber); }
+.mission-next { font-size: 13px; color: var(--muted); margin-top: 10px; text-align: center; }
+.sweep-badge { display: flex; align-items: center; gap: 12px; background: linear-gradient(180deg, rgba(242,229,0,0.12), var(--panel)); border: 1px solid var(--amber); border-radius: var(--radius); padding: 12px 14px; margin: 12px 0 2px; }
+.sweep-badge .sb-emoji { font-size: 26px; }
+.sweep-badge .sb-t { font-family: var(--display); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--amber); font-size: 15px; }
+.sweep-badge .sb-d { font-size: 13px; color: var(--muted); }
+.sweep-stat { display: flex; align-items: center; gap: 6px; background: var(--panel2); border: 1px solid var(--line2); border-radius: var(--radius-sm); padding: 8px 12px; margin: 2px 0 12px; font-size: 14px; color: var(--text); }
+.sweep-stat .ss-emoji { font-size: 16px; }
+.sweep-stat .ss-n { font-family: var(--display); font-weight: 700; color: var(--amber); font-size: 18px; }
+.stats-alleg { width: 100%; margin-top: 14px; }
+.countdown { text-align: center; font-family: var(--display); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 12.5px; color: var(--muted); margin: 10px 0 2px; }
+.hub-countdown { margin-top: 14px; }
+.rules-btn { font-family: var(--display); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 11px; color: var(--muted); background: transparent; border: 1px solid var(--line2); border-radius: 999px; padding: 4px 11px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.rules-btn:hover { color: var(--text); border-color: var(--line2); }
+.rules-game { font-family: var(--display); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cyan); font-size: 14px; margin-top: 4px; }
+.rules-copy { font-size: 15.5px; line-height: 1.5; color: var(--text); margin-top: 8px; }
+.rules-eg { pointer-events: none; opacity: 0.95; }
+.alleg-offer { width: 100%; }
 </style>
 </head>
 <body>
@@ -626,10 +652,11 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 /* =========================================================================
    Driver allegiance store (window.__LINEUP_ALLEGIANCE__).
 
-   A single locally-stored choice: your driver (and optional home state). Set
-   from a one-time prompt or from the hub. Never read from the browser beyond
-   the explicit selection; no location inference. Sent with answer POSTs so the
-   aggregation service can group standings.
+   A single locally-stored choice: your driver. Set from the hub chip, from
+   Stats, or offered after the first completed game (never a first-visit wall).
+   Home state was removed for launch. Never read from the browser beyond the
+   explicit selection; no location inference. The chosen driver is sent with
+   answer POSTs so the aggregation service can group standings.
    ========================================================================= */
   var CANON2 = window.__LINEUP_CANON__;
   function allegKey() { return window.__LINEUP_NS__ + "allegiance"; }
@@ -755,10 +782,25 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
   var POOL = DATA.driverPool;
 
   var DEV = /[?&]dev=1/.test(location.search);
+  // Phase Four QA gate (mirrors the hub): solution-capable inspection hooks are
+  // attached only under dev=1 or a global LINEUP_QA, so the public build exposes
+  // no window path to a matchup's solver internals.
+  var QA = DEV || !!(window.LINEUP_QA || window.__LINEUP_QA__);
   var GAME_URL = window.__LINEUP_URL__ || "";
   var CANON = window.__LINEUP_CANON__ || { name: function (s) { return String(s); }, short: function (s, d) { return d || String(s); } };
   // Canonical display name for any driver, resolved at render time only.
   function dn(name) { return CANON.name(name); }
+  // Phase Four cross-closure services, provided by the hub script. That script
+  // is a LATER <script> block, so these are not available when this closure is
+  // first evaluated. They are resolved lazily (refreshServices) at enter() time,
+  // by which point the hub script has run and the hooks exist.
+  var MISSION = null, RULES = null, COUNTDOWN = null;
+  function refreshServices() {
+    MISSION = window.__LINEUP_MISSION__ || null;
+    RULES = window.__LINEUP_RULES__ || null;
+    COUNTDOWN = window.__LINEUP_COUNTDOWN__ || null;
+  }
+  function shareURL() { return (window.__LINEUP_SHARE_URL__ ? window.__LINEUP_SHARE_URL__("crossera") : GAME_URL); }
   // Phase Two shared services.
   var API = window.__LINEUP_API__ || { enabled: function () { return false; }, postAnswer: function () { return Promise.resolve(null); }, getStats: function () { return Promise.resolve(null); } };
   var THEME = window.__LINEUP_THEME__ || { forDay: function () { return null; } };
@@ -1348,7 +1390,10 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
         el("button", { class: "btn ghost", style: "padding:7px 11px;font-size:14px", text: "‹ Games", onClick: function () { detachKeys(); if (window.__HUB__) window.__HUB__.home(); } }),
         el("span", { class: "wordmark", text: "CROSS-ERA DRAFT" }),
       ]),
-      el("span", { class: "era-tag", text: "All eras" }),
+      el("div", { class: "row", style: "gap:8px;align-items:center" }, [
+        RULES ? el("button", { class: "rules-btn", text: "Rules", title: "How to play", onClick: function () { RULES.show("crossera"); } }) : null,
+        el("span", { class: "era-tag", text: "All eras" }),
+      ]),
     ]);
   }
   function footer() {
@@ -1359,6 +1404,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
   }
   function setScreen() {
     detachKeys();
+    if (COUNTDOWN) COUNTDOWN.clearAll();
     var frag = el("div", { class: "stack grow" }, Array.prototype.slice.call(arguments));
     clear(App.root);
     mount(App.root, topbar(), frag, footer());
@@ -1453,6 +1499,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 
   function startRun(seed, isReplay) {
     var os = App.orgSeason;
+    App.restored = false;
     seed = seed || ("crossera|" + os.id + "|" + Math.floor(Math.random() * 1e9));
     App.lastSeed = seed;
     App.run = buildCrossEraRun(os, seed);
@@ -1569,12 +1616,19 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
       em += (!opp || yours[i].wins > opp.wins) ? "🟩" : "⬛";
     }
     var verb = result.win ? "Beat" : "Lost to";
-    return [
+    var lines = [
       "THE LINEUP: CROSS-ERA",
       verb + " " + os.year + " " + os.org,
       "My lineup: " + result.total + (result.total === 1 ? " win. " : " wins. ") + "Benchmark: " + result.benchmark + ".",
       em,
-    ].join("\n") + crossBadge() + "\n" + GAME_URL;
+    ];
+    // Daily benchmark-beating streak, only for the official daily result.
+    if (App.isDaily && MISSION) {
+      var cs = MISSION.crossEraDailyStreak();
+      if (cs >= 2) lines.push("🔥 " + cs + " day streak");
+    }
+    var sweep = (MISSION && MISSION.sweepShareLine) ? MISSION.sweepShareLine() : "";
+    return lines.join("\n") + crossBadge() + sweep + "\n" + shareURL();
   }
   function crossBadge() {
     var a = ALLEGIANCE.get();
@@ -1643,12 +1697,30 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 
   function showResult() {
     var eng = App.engine, os = App.orgSeason, result = eng.result, run = App.run;
+    var day = DAY.key();
     var percentile = draftPercentile(result.total, run.pack.map(function (c) { return c.wins; }), run.seats, run.passes);
     var view = buildResultView({ signed: eng.signed, result: result, orgSeason: os, percentile: percentile });
     window.track("game_complete", { mode: "crossera", outcome: result.outcome, score: result.total });
     window.track("crossera_result", { win: result.win, wins: result.total, benchmark: result.benchmark });
-    // Phase Three: record for the stats modal (daily and free play both count).
-    if (window.__LINEUP_RECORD_CROSSERA__) { try { window.__LINEUP_RECORD_CROSSERA__(result); } catch (e) {} }
+    // Stats record every real completion (daily and free play), but never a
+    // restored screen after a refresh (that would double count).
+    if (!App.restored && window.__LINEUP_RECORD_CROSSERA__) { try { window.__LINEUP_RECORD_CROSSERA__(result); } catch (e) {} }
+
+    // The official daily result is persisted once (first completed attempt).
+    // Replays and restores never overwrite it, matching the Ladder convention.
+    var wasOfficial = App.isDaily && MISSION && !!MISSION.crossDailyForDay(day);
+    if (App.isDaily && !App.restored && MISSION && !wasOfficial) {
+      MISSION.crossDailySetIfAbsent(day, {
+        org: os.org, orgShort: shortOrg(os.org), year: os.year,
+        total: result.total, benchmark: result.benchmark,
+        win: result.win, victoryLane: result.victoryLane, outcome: result.outcome,
+        signed: eng.signed.map(function (c) { return { driver: c.driver, year: c.year, wins: c.wins, tier: c.tier, team: c.team }; }),
+        official: true,
+      });
+      MISSION.markSweepIfComplete(day);
+    }
+    var isPractice = App.isDaily && (App.restored || wasOfficial);
+    var practiceFlag = isPractice ? el("div", { class: "practice-flag", text: "PRACTICE" }) : null;
 
     var share = crossEraShareText();
     var copyBtn = el("button", { class: "btn primary", text: "Copy share text" });
@@ -1666,14 +1738,12 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
     // stats to fill the per-seat rarity and garage standings. Free play never
     // aggregates. All strictly graceful: a dead backend leaves an empty host.
     var statsHost = el("div", {});
-    if (App.isDaily && !App.postedDaily && API.enabled()) {
+    if (App.isDaily && !App.postedDaily && !App.restored && API.enabled()) {
       App.postedDaily = true;
       var a = ALLEGIANCE.get() || {};
-      var day = DAY.key();
       var posts = eng.signed.map(function (c) {
         var body = { day: day, mode: "crossera", cell: "pack", answer: dn(c.driver) };
         if (a.driver) body.allegiance = a.driver;
-        if (a.state) body.state = a.state;
         return API.postAnswer(body);
       });
       Promise.all(posts).then(function () { return API.getStats(day, "crossera"); }).then(function (s) {
@@ -1687,18 +1757,29 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
     var optimalLine = el("div", { class: "lede", style: "margin-top:10px;opacity:0", text: "Best possible " + (App.isDaily ? "today" : "from this pack") + ": " + run.maxOrdered + (run.maxOrdered === 1 ? " win." : " wins.") });
 
     var actionKids = [
-      el("button", { class: "btn ghost", text: "Replay this pack", onClick: function () { window.track("game_replay", { mode: "crossera" }); startRun(App.lastSeed, true); } }),
+      el("button", { class: "btn ghost", text: "Replay this pack", onClick: function () { window.track("game_replay", { mode: "crossera" }); App.restored = false; startRun(App.lastSeed, true); } }),
       el("button", { class: "btn ghost", text: "Stats", onClick: function () { if (window.__LINEUP_OPEN_STATS__) window.__LINEUP_OPEN_STATS__("crossera"); } }),
       DEV ? el("button", { class: "btn ghost", text: "Difficulty check", onClick: function () { renderSweep(); } }) : null,
     ];
-    var primaryBtn = App.isDaily
-      ? el("button", { class: "btn primary", text: "Free play a matchup", onClick: function () { newMatchup(); } })
-      : el("button", { class: "btn primary", text: "New matchup", onClick: function () { newMatchup(); } });
-    var actions = el("div", { class: "stack", style: "gap:10px;margin-top:16px" }, [
-      primaryBtn,
-      el("div", { class: "actions" }, actionKids),
-    ]);
-    setScreen(el("div", { class: "checker" }), view.node, shareCard, statsHost, optimalLine, packRevealNode(run, eng.signed), actions);
+    // Daily official result routes through the daily mission (next unfinished
+    // game, or Share when the day is swept). Free play and practice keep the
+    // simple new-matchup navigation.
+    var navStack;
+    if (App.isDaily && !isPractice && MISSION) {
+      var nav = MISSION.buildNav("crossera", { onShare: function (btn) { window.track("share_click", { mode: "crossera" }); copyText(share, btn); } });
+      actionKids.unshift(el("button", { class: "btn ghost", text: "Free play a matchup", onClick: function () { newMatchup(); } }));
+      navStack = nav.concat([el("div", { class: "actions" }, actionKids)]);
+    } else {
+      var primaryBtn = App.isDaily
+        ? el("button", { class: "btn primary", text: "Free play a matchup", onClick: function () { newMatchup(); } })
+        : el("button", { class: "btn primary", text: "New matchup", onClick: function () { newMatchup(); } });
+      var extra = [primaryBtn];
+      if (App.isDaily) extra.push(el("button", { class: "btn ghost", text: "Back to games", onClick: function () { if (window.__HUB__) window.__HUB__.home(); } }));
+      if (COUNTDOWN) extra.push(COUNTDOWN.node());
+      navStack = extra.concat([el("div", { class: "actions" }, actionKids)]);
+    }
+    var actions = el("div", { class: "stack", style: "gap:10px;margin-top:16px" }, navStack);
+    setScreen(el("div", { class: "checker" }), practiceFlag, view.node, shareCard, statsHost, optimalLine, packRevealNode(run, eng.signed), actions);
     var played = view.play();
     if (played && typeof played.then === "function") {
       played.then(function () { optimalLine.style.opacity = "1"; optimalLine.classList.add("j-stagger"); });
@@ -1765,14 +1846,51 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
   }
 
   // Inspection hook for the measurement run and the daily-matchup verifiers.
-  window.__CROSSERA__ = { runSweep: runSweep, buildCrossEraRun: buildCrossEraRun, fameOf: fameOf, ORG_SEASONS: ORG_SEASONS, POOL: POOL, dailyOrgSeason: dailyOrgSeason, solveMaxAchievable: solveMaxAchievable };
+  // Solution-capable, so attached only under the QA gate (dev=1 or LINEUP_QA);
+  // a normal public build never exposes the solver or the daily pack builder.
+  if (QA) {
+    window.__CROSSERA__ = { runSweep: runSweep, buildCrossEraRun: buildCrossEraRun, fameOf: fameOf, ORG_SEASONS: ORG_SEASONS, POOL: POOL, dailyOrgSeason: dailyOrgSeason, solveMaxAchievable: solveMaxAchievable };
+  }
+
+  // Rebuild a finished daily result screen from the stored official attempt, so
+  // a player who already played today sees their result after a refresh instead
+  // of a fresh start. The daily pack is deterministic from the seed, so we deal
+  // the same pack and replay the saved sign/pass decisions over it.
+  function restoreDailyResult(saved) {
+    var dk = DAY.key();
+    var theme = THEME.forDay(dk);
+    App.orgSeason = dailyOrgSeason(dk, theme);
+    App.isDaily = true; App.dailySeed = "crossera-daily|" + dk; App.theme = theme;
+    App.lastSeed = App.dailySeed;
+    App.run = buildCrossEraRun(App.orgSeason, App.dailySeed);
+    App.engine = new Engine(App.run, App.orgSeason);
+    var want = {};
+    (saved.signed || []).forEach(function (c) { want[c.driver + "|" + c.year] = 1; });
+    var guard = 0;
+    while (App.engine.status !== "done" && guard++ < App.run.pack.length + 2) {
+      var card = App.engine.currentCard();
+      if (!card) break;
+      if (want[card.driver + "|" + card.year]) { if (!App.engine.sign()) App.engine.pass(); }
+      else { if (!App.engine.pass()) App.engine.sign(); }
+    }
+    App.restored = true; App.postedDaily = true; App.stats = null;
+    showResult();
+  }
 
   App.root = document.getElementById("app");
   // Owned by the games hub now: no auto-launch. The hub calls enter(), which
-  // opens the daily matchup by default; free play is one tap away.
+  // restores today's finished daily result if there is one, otherwise opens the
+  // daily matchup. Free play is one tap away. First open shows the rules once.
   window.__CROSSERA_MODE__ = {
-    enter: function () { App.orgSeason = null; App.postedDaily = false; App.stats = null; dailyMatchup(); },
-    leave: function () { detachKeys(); },
+    enter: function () {
+      refreshServices();
+      App.orgSeason = null; App.postedDaily = false; App.stats = null; App.restored = false;
+      var saved = MISSION ? MISSION.crossDailyForDay(DAY.key()) : null;
+      if (saved) restoreDailyResult(saved);
+      else dailyMatchup();
+      if (RULES) RULES.maybeShow("crossera");
+    },
+    leave: function () { detachKeys(); if (COUNTDOWN) COUNTDOWN.clearAll(); },
   };
 })();
 </script>
@@ -1866,7 +1984,43 @@ var LS = {
   gridArchive: NS + "gridArchive",  // archive grid plays {day:{score}}, kept apart
   ladderHistory: NS + "ladderHistory", // official daily ladder results {day:{rung}}
   crosseraStats: NS + "crosseraStats", // {played, wins, sumTotal, sumBench}
+  crosseraDaily: NS + "crosseraDaily", // official daily cross-era results {day:{...}}
+  sweeps: NS + "sweeps",            // Garage Sweep days {day:true}
+  rulesSeen: NS + "rulesSeen:",     // + game name; one-time onboarding overlay flag
 };
+
+// Phase Four QA gate. Solution-capable inspection hooks (window.__GRID_DEBUG__,
+// window.__CROSSERA__ and its solver/generator accessors) are attached ONLY when
+// this is true, so a normal public build (no flag) exposes no path to a current
+// or future day's answers. verify.js and make-manifest.js set a global LINEUP_QA
+// in their sandbox before evaluating the scripts, so the harnesses keep working.
+var QA = DEV || !!(window.LINEUP_QA || window.__LINEUP_QA__);
+
+// Curated launch week (Sep 2 to 8, 2026). For those seven UTC days the grid uses
+// a pinned candidate seed and difficulty instead of the date-derived pair, so a
+// welcoming opener and a tuned week greet new players. Selected mechanically from
+// a pool of 1200 valid generated grids (see gen-launch-seeds and check J); zero
+// hand-authored answers, fully deterministic, every existing invariant held.
+// Days after Sep 8 use the normal date-derived path unchanged.
+var LAUNCH_WEEK_SEEDS = {
+  "2026-09-02": { seed: "lw|5", diff: "easy" },     // welcoming: counts [13,14,14,15,20,24,27,28,33] min 13, median 20, twos 0
+  "2026-09-03": { seed: "lw|0", diff: "standard" }, // standard: counts [2,3,3,3,5,6,9,17,18] min 2, median 5, twos 1
+  "2026-09-04": { seed: "lw|1", diff: "standard" }, // standard: counts [5,5,7,13,13,15,22,24,24] min 5, median 13, twos 0
+  "2026-09-05": { seed: "lw|2", diff: "standard" }, // standard: counts [2,3,3,3,4,4,4,5,8] min 2, median 4, twos 1
+  "2026-09-06": { seed: "lw|4", diff: "standard" }, // standard: counts [3,4,5,6,9,10,19,21,27] min 3, median 9, twos 0
+  "2026-09-07": { seed: "lw|2", diff: "hard" },     // hard: counts [2,2,3,3,3,8,11,24,32] min 2, median 3, twos 2
+  "2026-09-08": { seed: "lw|4", diff: "hard" },     // hard: counts [2,2,3,4,4,6,13,18,22] min 2, median 4, twos 2
+};
+// The (seed, theme, difficulty) triple the live grid uses for a given UTC day.
+// Launch-week days override seed and difficulty; every other day is date-derived
+// and weekday-weighted exactly as before. One source of truth for the client and
+// (via the QA hook) the verifier and manifest generator.
+function gridPlanForDay(dk) {
+  var theme = THEME.forDay(dk);
+  var lw = LAUNCH_WEEK_SEEDS[dk];
+  if (lw) return { seed: lw.seed, theme: theme, difficulty: lw.diff, launch: true };
+  return { seed: dk, theme: theme, difficulty: WEEKDAY.forDay(dk), launch: false };
+}
 
 // One-time forward migration of older-namespace keys. Copies any key from a
 // prior version to its v4 equivalent when the v4 key is absent, newest source
@@ -1980,6 +2134,265 @@ function copyText(text, btn) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(done, fallback);
   } else fallback();
+}
+
+/* =========================================================================
+   PHASE FOUR: one coherent daily product.
+
+   The daily mission ties the three games together, the Garage Sweep rewards
+   finishing all three, onboarding overlays teach each game once, a live
+   countdown shows the shared UTC reset, and deep links open a game directly.
+   Cross-Era is a separate closure, so the pieces it needs (mission status,
+   navigation, rules, countdown, its own daily persistence) are exposed on
+   window here and consumed there. No worker involvement in any of it.
+   ========================================================================= */
+
+/* ---------------- cross-era daily persistence (owned here, filled there) ----
+   The Cross-Era closure computes the daily result and hands it here to store
+   under the versioned namespace. Only the first official attempt is written;
+   replays are practice and never overwrite it, matching the Ladder. */
+function loadCrossDaily() { try { return JSON.parse(lsGet(LS.crosseraDaily) || "{}") || {}; } catch (e) { return {}; } }
+function crossDailyForDay(dk) { var h = loadCrossDaily(); return h[dk] || null; }
+// Writes the official result only if none exists yet. Returns true if THIS
+// call became the official one.
+function crossDailySetIfAbsent(dk, data) {
+  var h = loadCrossDaily();
+  if (h[dk] !== undefined) return false;
+  h[dk] = data; lsSet(LS.crosseraDaily, JSON.stringify(h)); return true;
+}
+// Consecutive UTC days (ending today, or yesterday if today is unplayed) whose
+// official Cross-Era result was a win. Local only; no worker.
+function crossEraDailyStreak() {
+  var h = loadCrossDaily();
+  var today = todayUTCms();
+  var won = function (ms) { var r = h[keyForMs(ms)]; return r && r.win; };
+  var playedToday = h[keyForMs(today)] !== undefined;
+  var anchor = playedToday ? 0 : (h[keyForMs(today - 86400000)] !== undefined ? 1 : -1);
+  var current = 0;
+  if (anchor >= 0) { var i = anchor; while (won(today - i * 86400000)) { current++; i++; } }
+  return current;
+}
+
+/* ---------------- the daily mission + Garage Sweep ----------------
+   Three official attempts define the day: the Grid, the Daily Ladder run, and
+   the Cross-Era daily matchup. Finishing all three earns a local Garage Sweep
+   badge for that day, which also rides along in every share string that day. */
+function missionStatus(dk) {
+  dk = dk || dayKey();
+  var grid = !!loadGridHistory()[dk];
+  var ladder = loadLadderHistory()[dk] !== undefined;
+  var crossera = loadCrossDaily()[dk] !== undefined;
+  var count = (grid ? 1 : 0) + (ladder ? 1 : 0) + (crossera ? 1 : 0);
+  return { grid: grid, ladder: ladder, crossera: crossera, count: count, complete: count === 3 };
+}
+// The next unfinished daily game, skipping a mode that was just completed. Order
+// is Grid, Ladder, Cross-Era. Returns null when all three are done.
+function nextMissionMode(justFinished) {
+  var s = missionStatus();
+  var order = ["grid", "ladder", "crossera"];
+  for (var i = 0; i < order.length; i++) {
+    var m = order[i];
+    if (m === justFinished) continue;
+    if (!s[m]) return m;
+  }
+  return null;
+}
+var MODE_LABEL = { grid: "Daily Grid", ladder: "Daily Ladder", crossera: "Cross-Era" };
+function missionGoto(mode) {
+  clearAllCountdowns();
+  if (mode === "grid") { lsSet(LS.lastMode, "grid"); renderGrid(); }
+  else if (mode === "ladder") { lsSet(LS.lastMode, "streak"); renderStreak("ladder"); }
+  else if (mode === "crossera") { lsSet(LS.lastMode, "crossera"); if (window.__CROSSERA_MODE__) window.__CROSSERA_MODE__.enter(); }
+  else renderHub();
+}
+// Records the Garage Sweep for a day the first time all three are complete.
+// Returns true only on the transition (so a screen can celebrate once).
+function markSweepIfComplete(dk) {
+  dk = dk || dayKey();
+  if (!missionStatus(dk).complete) return false;
+  var h; try { h = JSON.parse(lsGet(LS.sweeps) || "{}") || {}; } catch (e) { h = {}; }
+  if (h[dk]) return false;
+  h[dk] = true; lsSet(LS.sweeps, JSON.stringify(h));
+  return true;
+}
+function loadSweeps() { try { return JSON.parse(lsGet(LS.sweeps) || "{}") || {}; } catch (e) { return {}; } }
+function sweepInfo() {
+  var h = loadSweeps();
+  var today = todayUTCms();
+  var days = Object.keys(h).filter(function (k) { return /^\d{4}-\d{2}-\d{2}$/.test(k) && h[k]; });
+  var count = days.length;
+  var anchor = h[keyForMs(today)] ? 0 : (h[keyForMs(today - 86400000)] ? 1 : -1);
+  var current = 0;
+  if (anchor >= 0) { var i = anchor; while (h[keyForMs(today - i * 86400000)]) { current++; i++; } }
+  var longest = 0, run = 0, prev = null;
+  days.map(function (d) { return Date.parse(d + "T00:00:00Z"); }).sort(function (a, b) { return a - b; })
+    .forEach(function (ms) { if (prev !== null && ms - prev === 86400000) run++; else run = 1; if (run > longest) longest = run; prev = ms; });
+  if (current > longest) longest = current;
+  return { count: count, current: current, longest: longest, today: !!h[keyForMs(today)] };
+}
+// One line appended to every share string on a day the sweep is complete.
+function sweepShareLine() {
+  var s = sweepInfo();
+  if (!s.today) return "";
+  return "\n🧰 Garage Sweep" + (s.current >= 2 ? " (" + s.current + " day sweep streak)" : "");
+}
+// The result-screen mission block, shared by all three games. After a game's
+// result screen the primary button routes to the next unfinished daily game;
+// when all three are done it becomes Share, and a Garage Sweep badge shows.
+// Returns an array of DOM nodes (banner, primary button, live countdown).
+function buildMissionNav(justFinished, opts) {
+  opts = opts || {};
+  var nodes = [];
+  var s = missionStatus();
+  if (s.complete && sweepInfo().today) {
+    var si = sweepInfo();
+    nodes.push(el("div", { class: "sweep-badge" }, [
+      el("span", { class: "sb-emoji", text: "🧰" }),
+      el("div", {}, [
+        el("div", { class: "sb-t", text: "Garage Sweep" }),
+        el("div", { class: "sb-d", text: "All three daily games done" + (si.current >= 2 ? ". " + si.current + " day sweep streak." : ".") }),
+      ]),
+    ]));
+  }
+  var next = nextMissionMode(justFinished);
+  if (next) {
+    nodes.push(el("div", { class: "mission-next", text: (MODE_LABEL[justFinished] || "Done") + " complete. Next up: " + MODE_LABEL[next] + "." }));
+    nodes.push(el("button", { class: "btn primary", style: "margin-top:6px", text: "Next up: " + MODE_LABEL[next] + " →", onClick: function () { missionGoto(next); } }));
+  } else if (opts.onShare) {
+    var shareBtn = el("button", { class: "btn primary", style: "margin-top:6px", text: "Share your day" });
+    shareBtn.addEventListener("click", function () { opts.onShare(shareBtn); });
+    nodes.push(shareBtn);
+  }
+  // Offer (never force) allegiance once the player has finished a game and has
+  // not chosen a driver yet. A quiet CTA, not an interrupting overlay.
+  var al = (window.__LINEUP_ALLEGIANCE__ && window.__LINEUP_ALLEGIANCE__.get) ? window.__LINEUP_ALLEGIANCE__.get() : ALLEGIANCE.get();
+  if (!al || !al.driver) {
+    nodes.push(el("button", { class: "btn ghost alleg-offer", style: "margin-top:6px", text: "Pick your driver", onClick: function () { showAllegiancePrompt(false); } }));
+  }
+  nodes.push(countdownNode());
+  return nodes;
+}
+
+/* ---------------- onboarding overlays (one per game, seen once) ----------------
+   A single-screen rules card the first time a player opens each game, plus a
+   small persistent rules button. A local flag marks it seen; it never forces
+   again. Copy is fixed and dash-free. */
+var RULES_COPY = {
+  grid: "Fill each cell with a driver who matches both clues. Each driver can be used once. Guess freely; wrong guesses cost nothing.",
+  ladder: "Pick the driver with more career Cup wins. One wrong answer ends your official run. Twenty rungs clears the daily.",
+  crossera: "Sign drivers to beat the real team's season win total. Passes are limited. A driver's wins are revealed after you decide.",
+};
+var RULES_TITLE = { grid: "Daily Grid", ladder: "Daily Ladder", crossera: "Cross-Era Draft" };
+function rulesSeen(game) { return lsGet(LS.rulesSeen + game) === "1"; }
+function markRulesSeen(game) { lsSet(LS.rulesSeen + game, "1"); }
+// A tiny 3x3 example rendered with the live grid styles: one clue pair, one
+// cell filled to show the shape. No answers to any real day are revealed.
+function rulesGridExample() {
+  var wrap = el("div", { class: "ggrid rules-eg", style: "margin:10px 0 2px" });
+  mount(wrap, el("div", {}));
+  ["Won at Daytona", "Won 20+"].concat([""]).slice(0, 2).forEach(function (t) {
+    mount(wrap, el("div", { class: "ghead", text: t }));
+  });
+  mount(wrap, el("div", { class: "ghead", text: "" }));
+  var labels = ["Cup champion", "1990s winner", "Rookie of the Year"];
+  for (var r = 0; r < 3; r++) {
+    mount(wrap, el("div", { class: "ghead rowhead", text: labels[r] }));
+    for (var c = 0; c < 3; c++) {
+      if (r === 0 && c === 0) {
+        mount(wrap, el("div", { class: "gcell ok" }, [
+          el("span", { class: "gc-nm", text: "Gordon" }),
+          el("span", { class: "gc-r", text: "Obvious" }),
+        ]));
+      } else {
+        mount(wrap, el("div", { class: "gcell" }, [el("span", { class: "gc-plus", text: "+" })]));
+      }
+    }
+  }
+  return wrap;
+}
+function showRulesOverlay(game, onClose) {
+  var overlay = el("div", { class: "modal-overlay" });
+  function close() {
+    markRulesSeen(game);
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    document.removeEventListener("keydown", onKey);
+    if (typeof onClose === "function") onClose();
+  }
+  function onKey(e) { if (e.key === "Escape") close(); }
+  var closeBtn = el("button", { class: "modal-x", text: "×" });
+  closeBtn.addEventListener("click", close);
+  var kids = [
+    el("div", { class: "modal-head" }, [el("div", { class: "modal-title display", text: "How to play" }), closeBtn]),
+    el("div", { class: "rules-game", text: RULES_TITLE[game] || "" }),
+    el("div", { class: "rules-copy", text: RULES_COPY[game] || "" }),
+  ];
+  if (game === "grid") kids.push(rulesGridExample());
+  kids.push(el("button", { class: "btn primary", style: "margin-top:14px", text: "Got it", onClick: close }));
+  var panel = el("div", { class: "modal-panel" }, kids);
+  overlay.appendChild(panel);
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
+  document.addEventListener("keydown", onKey);
+  document.body.appendChild(overlay);
+}
+// Show once on first open; resolve immediately if already seen.
+function maybeShowRules(game, onClose) {
+  if (rulesSeen(game)) { if (typeof onClose === "function") onClose(); return false; }
+  showRulesOverlay(game, onClose);
+  return true;
+}
+// The small persistent rules button placed inside each game screen.
+function rulesButton(game) {
+  return el("button", { class: "rules-btn", title: "How to play", "aria-label": "How to play", text: "Rules", onClick: function () { showRulesOverlay(game); } });
+}
+
+/* ---------------- reset countdown (shared UTC rollover) ----------------
+   Result screens and the hub footer show a live "New games in HH:MM:SS" to the
+   next midnight UTC. Never shown during active gameplay. Reduced-motion users
+   get a static value refreshed once a minute instead of every second. */
+var _countdownTimers = [];
+function clearAllCountdowns() {
+  _countdownTimers.forEach(function (t) { clearInterval(t); });
+  _countdownTimers = [];
+}
+function msToNextUTCDay() {
+  var now = Date.now();
+  var d = new Date(now);
+  var next = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1);
+  return Math.max(0, next - now);
+}
+function fmtCountdown(ms) {
+  var s = Math.floor(ms / 1000);
+  var hh = Math.floor(s / 3600), mm = Math.floor((s % 3600) / 60), ss = s % 60;
+  return String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0") + ":" + String(ss).padStart(2, "0");
+}
+// Returns a node that updates itself. Under ?date= preview there is no real
+// rollover to count to, so it shows a static neutral line instead.
+function countdownNode(cls) {
+  var isPreview = /[?&]date=/.test(location.search);
+  var node = el("div", { class: "countdown" + (cls ? " " + cls : "") });
+  if (isPreview) { node.textContent = "Preview day. Live games reset at midnight UTC."; return node; }
+  var reduced = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  function tick() { node.textContent = "New games in " + fmtCountdown(msToNextUTCDay()); }
+  tick();
+  var timer = setInterval(tick, reduced ? 60000 : 1000);
+  _countdownTimers.push(timer);
+  return node;
+}
+
+/* ---------------- deep links (#grid #ladder #draft) ----------------
+   A sanitized hash opens a game directly and composes with ?date= preview.
+   Every share URL carries its mode hash. Unknown hashes fall through to hub. */
+var HASH_TO_MODE = { "grid": "grid", "ladder": "ladder", "draft": "crossera", "crossera": "crossera" };
+var MODE_TO_HASH = { grid: "grid", ladder: "ladder", crossera: "draft" };
+function currentHashMode() {
+  var raw = String(location.hash || "").replace(/^#/, "").toLowerCase().replace(/[^a-z]/g, "");
+  return HASH_TO_MODE[raw] || null;
+}
+function shareURLFor(mode) {
+  var base = GAME_URL || "";
+  var h = MODE_TO_HASH[mode];
+  if (!base || !h) return base;
+  return base.replace(/#.*$/, "") + "#" + h;
 }
 
 /* =========================================================================
@@ -2290,6 +2703,7 @@ function hubFooter() {
   ]);
 }
 function setHubScreen(modeLabel) {
+  clearAllCountdowns();
   var frag = el("div", { class: "stack grow" }, Array.prototype.slice.call(arguments, 1));
   clear($app);
   mount($app, hubTopbar(modeLabel), frag, hubFooter());
@@ -2342,7 +2756,7 @@ function renderHub() {
   if (gridSave && gridSave.done) {
     gridStat = "Today: " + gridSave.cells.filter(Boolean).length + "/9, played";
   } else if (gridSave) {
-    gridStat = "In progress, " + gridSave.guesses + (gridSave.guesses === 1 ? " miss" : " misses") + " left";
+    gridStat = "In progress, " + gridSave.cells.filter(Boolean).length + "/9 so far";
   }
   var si = gridStreakInfo();
   var gridExtra = [];
@@ -2370,24 +2784,41 @@ function renderHub() {
   );
 
   // 2. Streak, now a shared Daily Ladder (Free play still one tap away inside).
+  // The official daily is the first 20 rungs; anything past 20 is overtime depth.
   var li = ladderStreakInfo();
-  var ladderStat = li.playedToday
-    ? ("Today: rung " + li.todayRung + (li.current >= 2 ? ", " + li.current + " day streak" : ""))
-    : ("Daily ladder #" + gridNumber() + " is up");
+  var ladderStat;
+  if (li.playedToday) {
+    var rung = li.todayRung || 0;
+    var ot = Math.max(0, rung - 20);
+    var reach = rung >= 20 ? ("cleared the daily" + (ot > 0 ? ", overtime " + ot : "")) : ("rung " + rung);
+    ladderStat = "Today: " + reach + (li.current >= 2 ? " · " + li.current + " day streak" : "");
+  } else {
+    ladderStat = "Daily ladder #" + gridNumber() + " is up";
+  }
   cards.push(
     gameCard({
       title: "Streak", tag: "Daily Ladder",
-      desc: "Who had more Cup wins? Climb the daily ladder. Same rungs for everybody, or hit Free play for endless.",
+      desc: "Who had more Cup wins? Climb the daily ladder. Twenty rungs clears the daily, then overtime. Free play is one tap away.",
       stat: ladderStat,
       onClick: function () { lsSet(LS.lastMode, "streak"); renderStreak("ladder"); },
     })
   );
 
-  // 3. Cross-Era Draft, "Build a Team".
+  // 3. Cross-Era Draft, "Build a Team". Shows today's official outcome and the
+  // running benchmark-beating daily streak, or that it has not been played.
+  var cd = crossDailyForDay(dk);
+  var ces = crossEraDailyStreak();
+  var crossStat;
+  if (cd) {
+    crossStat = "Today: " + (cd.win ? "Beat " : "Lost to ") + cd.year + " " + (cd.orgShort || cd.org) + ", " + cd.total + " to " + cd.benchmark + (ces >= 2 ? " · " + ces + " day streak" : "");
+  } else {
+    crossStat = "Matchup not played";
+  }
   cards.push(
     gameCard({
       title: "Cross-Era Draft", tag: "Build a Team",
       desc: "Build a lineup from NASCAR history. Beat the real team.",
+      stat: crossStat,
       onClick: function () {
         lsSet(LS.lastMode, "crossera");
         if (window.__CROSSERA_MODE__) window.__CROSSERA_MODE__.enter();
@@ -2402,12 +2833,29 @@ function renderHub() {
 
   window.track("hub_impression", {});
   var theme = THEME.forDay(dk);
+  // The daily mission: one objective across the three games.
+  var mission = missionStatus(dk);
+  var swept = mission.complete && sweepInfo().today;
+  var missionBanner = el("button", { class: "mission-banner" + (swept ? " swept" : ""), onClick: function () {
+    var n = nextMissionMode(null);
+    if (n) missionGoto(n);
+  } }, [
+    el("div", { class: "mb-line", text: "TODAY'S LINEUP: " + mission.count + " OF 3 COMPLETE" }),
+    el("div", { class: "mb-dots" }, [
+      el("span", { class: "mb-dot" + (mission.grid ? " on" : ""), text: "Grid" }),
+      el("span", { class: "mb-dot" + (mission.ladder ? " on" : ""), text: "Ladder" }),
+      el("span", { class: "mb-dot" + (mission.crossera ? " on" : ""), text: "Cross-Era" }),
+    ]),
+    swept ? el("div", { class: "mb-sweep", text: "🧰 Garage Sweep" + (sweepInfo().current >= 2 ? " · " + sweepInfo().current + " day streak" : "") }) : null,
+  ]);
   setHubScreen(null,
     el("div", { class: "checker" }),
     el("div", { class: "hub-lede", text: "Daily stock car games for people who remember the Tide ride. Pick a game." }),
     theme ? el("div", { class: "theme-accent", text: theme.label }) : null,
+    missionBanner,
     allegianceRow(),
-    el("div", { class: "hub-cards" }, cards)
+    el("div", { class: "hub-cards" }, cards),
+    countdownNode("hub-countdown")
   );
 }
 // Hub allegiance control: shows the chosen team or a prompt to pick, both open
@@ -2419,7 +2867,6 @@ function allegianceRow() {
     chip = el("button", { class: "alleg-chip" }, [
       el("span", { text: "Team " }),
       el("span", { class: "lbl", text: ALLEGIANCE.teamLabel(a.driver) }),
-      el("span", { text: a.state ? "  " + a.state : "" }),
     ]);
   } else {
     chip = el("button", { class: "alleg-chip", text: "Pick your driver" });
@@ -2430,14 +2877,10 @@ function allegianceRow() {
   return el("div", { class: "alleg-row" }, [chip, statsChip]);
 }
 
-// Two-letter home-state options (explicit selection only; never inferred).
-var US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC"];
-
 function showAllegiancePrompt(firstVisit) {
   activeMode = null;
   var existing = ALLEGIANCE.get() || {};
   var selected = existing.driver || null;
-  var stateVal = existing.state || "";
   var list = ALLEGIANCE.driverList();
 
   var listWrap = el("div", { class: "alleg-list" });
@@ -2473,17 +2916,13 @@ function showAllegiancePrompt(firstVisit) {
   search.addEventListener("input", paintList);
   paintList();
 
-  var stateSel = el("select", {}, [el("option", { value: "", text: "Home state (optional)" })].concat(
-    US_STATES.map(function (s) { return el("option", { value: s, text: s, selected: s === stateVal }); })
-  ));
-
   saveBtn.addEventListener("click", function () {
     if (!selected) return;
-    ALLEGIANCE.set({ driver: selected, state: stateSel.value || null, prompted: true });
+    ALLEGIANCE.set({ driver: selected, prompted: true });
     renderHub();
   });
   var skip = el("button", { class: "btn ghost", style: "margin-top:6px", text: "Just show me the games", onClick: function () {
-    ALLEGIANCE.set({ driver: existing.driver || null, state: existing.state || null, prompted: true });
+    ALLEGIANCE.set({ driver: existing.driver || null, prompted: true });
     renderHub();
   } });
 
@@ -2495,7 +2934,6 @@ function showAllegiancePrompt(firstVisit) {
       el("div", { class: "alleg-sub", text: "Pick a favorite and see how their fans stack up. You can change it anytime." }),
       el("div", { class: "alleg-search" }, [search]),
       listWrap,
-      el("div", { class: "alleg-state" }, [stateSel]),
       saveBtn,
       skip,
     ]),
@@ -2515,7 +2953,8 @@ function showAllegiancePrompt(firstVisit) {
      through the canonical name table at render time.
    - Enter submits only when exactly one candidate remains; ambiguous
      surnames always require an explicit tap.
-   - Counter reads misses left; right answers are free.
+   - Unlimited guesses: wrong guesses cost nothing, there is no miss counter
+     and no fail state. The day finishes at 9/9 or when the player taps Reveal.
    - Grid, Streak, and any future daily share ONE UTC day key (dayKey) and a
      UTC grid number off the September 2, 2026 epoch.
    - Every resolved guess is logged to localStorage (capped at 500) for the
@@ -2537,7 +2976,7 @@ function saveGridState() {
   lsSet(LS.grid + Grid.date, JSON.stringify({
     rowIds: Grid.rows.map(function (r) { return r.id; }),
     colIds: Grid.cols.map(function (c) { return c.id; }),
-    cells: Grid.cells, guesses: Grid.guesses, done: Grid.done,
+    cells: Grid.cells, done: Grid.done,
   }));
 }
 
@@ -2585,7 +3024,6 @@ function gridAnswerBody(dk, cellIndex, name) {
   var a = ALLEGIANCE.get() || {};
   var body = { day: dk, mode: "grid", cell: String(cellIndex), answer: name };
   if (a.driver) body.allegiance = a.driver;
-  if (a.state) body.state = a.state;
   return body;
 }
 function refreshGridStats(dk) {
@@ -2636,38 +3074,36 @@ function newGridState(seedStr, dk, dev, theme, difficulty, archive) {
     theme: theme || null, themed: !!g.themed, fallback: !!g.fallback,
     difficulty: g.difficulty || "standard", weekdayFallback: !!g.weekdayFallback,
     cells: [null, null, null, null, null, null, null, null, null],
-    guesses: 9, done: false, sel: -1, feed: null,
+    done: false, sel: -1, feed: null,
   };
 }
 function initGrid(dev) {
   var dk = dayKey();
-  var theme = THEME.forDay(dk);
-  var difficulty = WEEKDAY.forDay(dk);
-  if (dev) { Grid = newGridState("dev|" + Math.random(), dk, true, theme, difficulty); return; }
-  var seedStr = dk;
+  var plan = gridPlanForDay(dk);
+  if (dev) { Grid = newGridState("dev|" + Math.random(), dk, true, plan.theme, plan.difficulty); return; }
   var saved = loadGridState(dk);
-  Grid = newGridState(seedStr, dk, false, theme, difficulty);
+  Grid = newGridState(plan.seed, dk, false, plan.theme, plan.difficulty);
   if (saved && saved.rowIds) {
     var rows = saved.rowIds.map(clueById), cols = saved.colIds.map(clueById);
     if (rows.every(Boolean) && cols.every(Boolean)) {
       Grid.rows = rows; Grid.cols = cols;
-      Grid.cells = saved.cells; Grid.guesses = saved.guesses; Grid.done = saved.done;
+      Grid.cells = saved.cells; Grid.done = saved.done;
     }
   }
 }
 // Archive: initialize the grid for a specific past day, played in place. Its
 // progress is saved under the same per-day key, but archive plays are tracked
-// separately and never touch the daily streak.
+// separately and never touch the daily streak. Uses the same day plan so a
+// launch-week day replays identically in the archive.
 function initArchiveGrid(dk) {
-  var theme = THEME.forDay(dk);
-  var difficulty = WEEKDAY.forDay(dk);
+  var plan = gridPlanForDay(dk);
   var saved = loadGridState(dk);
-  Grid = newGridState(dk, dk, false, theme, difficulty, true);
+  Grid = newGridState(plan.seed, dk, false, plan.theme, plan.difficulty, true);
   if (saved && saved.rowIds) {
     var rows = saved.rowIds.map(clueById), cols = saved.colIds.map(clueById);
     if (rows.every(Boolean) && cols.every(Boolean)) {
       Grid.rows = rows; Grid.cols = cols;
-      Grid.cells = saved.cells; Grid.guesses = saved.guesses; Grid.done = saved.done;
+      Grid.cells = saved.cells; Grid.done = saved.done;
     }
   }
 }
@@ -2677,7 +3113,22 @@ function usedInGrid(name) {
 }
 function gridCorrectCount() { return Grid.cells.filter(Boolean).length; }
 function finishGridIfNeeded() {
-  if (gridCorrectCount() === 9 || Grid.guesses <= 0) { Grid.done = true; Grid.sel = -1; }
+  if (gridCorrectCount() === 9) { Grid.done = true; Grid.sel = -1; }
+}
+// Player-initiated finish for the no-fail Grid. Ends the day at the current
+// count, records it, and reveals. Nothing about it reads as a loss; there is
+// no miss counter and no fail state anywhere.
+function revealGrid() {
+  var g = Grid;
+  if (!g || g.done) return;
+  g.done = true; g.sel = -1; g.feed = null;
+  window.track("grid_complete", { cells: gridCorrectCount() });
+  window.track("game_complete", { mode: g.archive ? "grid_archive" : "grid", score: gridCorrectCount() });
+  if (g.archive) recordArchivePlayed(g.date, gridCorrectCount());
+  else { recordGridPlayed(g.date, gridCorrectCount()); markSweepIfComplete(g.date); }
+  if (!g.dev) refreshGridStats(g.date);
+  saveGridState();
+  paintGrid();
 }
 function gridShareText() {
   var filled = Grid.cells.filter(Boolean);
@@ -2702,7 +3153,9 @@ function gridShareText() {
   if (si.current >= 2) lines.push("🔥 " + si.current + " day streak");
   var badge = allegianceBadgeLine();
   if (badge) lines.push(badge.replace(/^\n/, ""));
-  lines.push(GAME_URL);
+  var sweep = sweepShareLine();
+  if (sweep) lines.push(sweep.replace(/^\n/, ""));
+  lines.push(shareURLFor("grid"));
   return lines.join("\n");
 }
 
@@ -2720,6 +3173,8 @@ function renderGrid(archiveDk) {
   // near-miss reveal can populate. Past days are served freely by the worker.
   if (!Grid.dev && (Grid.done || gridCorrectCount() > 0)) refreshGridStats(Grid.date);
   paintGrid();
+  // First-visit rules overlay, once, only on a fresh unstarted daily grid.
+  if (!Grid.archive && !Grid.done && gridCorrectCount() === 0) maybeShowRules("grid");
 }
 function gridNumberForDate(dk) {
   var ms = Date.parse(dk + "T00:00:00Z");
@@ -2730,10 +3185,13 @@ function paintGrid() {
   var gnum = g.archive ? gridNumberForDate(g.date) : gridNumber();
   var head = el("div", { class: "row spread", style: "margin:8px 0 0" }, [
     el("div", { class: "wordmark display", style: "font-size:20px", text: "Grid #" + gnum + (g.dev ? " · dev" : "") }),
-    el("div", { class: "num", style: "font-size:20px;color:" + (g.guesses <= 2 ? "var(--red)" : "var(--cyan)"), text: g.guesses + (g.guesses === 1 ? " miss left" : " misses left") }),
+    el("div", { class: "row", style: "gap:8px;align-items:center" }, [
+      el("div", { class: "num", style: "font-size:20px;color:var(--cyan)", text: gridCorrectCount() + "/9" }),
+      rulesButton("grid"),
+    ]),
   ]);
   var archiveFlag = g.archive ? el("div", { class: "archive-flag", text: "ARCHIVE · " + g.date } ) : null;
-  var help = el("div", { class: "lede", style: "margin:4px 0 0;font-size:13px", text: "Tap a cell, name a driver who fits the row and the column. Each driver can only be used once. Right answers are free, nine misses ends the day." });
+  var help = el("div", { class: "lede", style: "margin:4px 0 0;font-size:13px", text: "Tap a cell, name a driver who fits the row and the column. Each driver can only be used once. Guess freely, wrong guesses cost nothing." });
 
   var cellsWrap = el("div", { class: "ggrid" });
   mount(cellsWrap, el("div", {}));
@@ -2778,6 +3236,15 @@ function paintGrid() {
     parts.push(gridResults());
   } else if (g.sel >= 0) {
     parts.push(gridGuessPanel());
+  } else if (gridCorrectCount() > 0) {
+    // No fail state: once at least one cell is filled, a player who wants to
+    // stop can reveal the rest and see results. Filling all nine finishes on
+    // its own, so this only shows while cells remain open.
+    parts.push(el("button", {
+      class: "btn ghost", style: "margin-top:10px",
+      text: "Reveal answers and finish",
+      onClick: function () { revealGrid(); },
+    }));
   }
 
   if (DEV && !g.done) {
@@ -2897,7 +3364,7 @@ function submitGuess(d, row, col) {
       });
     }
   } else {
-    g.guesses -= 1;
+    // No fail state: a wrong guess costs nothing. It just shakes and explains.
     g._shake = g.sel;
     var miss = !fitR && !fitC
       ? "<b>" + name + "</b> doesn't fit either clue."
@@ -2910,7 +3377,7 @@ function submitGuess(d, row, col) {
     window.track("grid_complete", { cells: gridCorrectCount() });
     window.track("game_complete", { mode: g.archive ? "grid_archive" : "grid", score: gridCorrectCount() });
     if (g.archive) recordArchivePlayed(g.date, gridCorrectCount());
-    else recordGridPlayed(g.date, gridCorrectCount());
+    else { recordGridPlayed(g.date, gridCorrectCount()); markSweepIfComplete(g.date); }
     if (!g.dev) refreshGridStats(g.date);
   }
   saveGridState();
@@ -2929,7 +3396,7 @@ function gridResults() {
   var share = gridShareText();
   var copyBtn = el("button", { class: "btn primary", text: "Copy share text" });
   copyBtn.addEventListener("click", function () { window.track("share_click", { mode: "grid" }); copyText(share, copyBtn); });
-  var verdict = gridCorrectCount() === 9 ? "Clean sweep." : gridCorrectCount() >= 6 ? "Solid day in the garage." : "The grid got you today.";
+  var verdict = gridCorrectCount() === 9 ? "Clean sweep." : gridCorrectCount() >= 6 ? "Solid day in the garage." : "Nice pulls. Come back tomorrow for a fresh grid.";
   var kids = [
     el("div", { class: "banner " + (gridCorrectCount() >= 6 ? "win" : "miss"), style: "margin-top:10px" }, [
       el("div", { class: "verdict display", text: gridCorrectCount() + "/9" }),
@@ -2940,7 +3407,6 @@ function gridResults() {
         statBox(gridCorrectCount() + "/9", "Cells filled"),
         statBox(String(deepPlus), "Deep cuts or better"),
         statBox(String(sicko), "Sicko pulls"),
-        statBox(String(g.guesses), "Misses left over"),
       ]),
     ]),
   ];
@@ -2963,6 +3429,13 @@ function gridResults() {
   );
   kids.push(gridRevealNode());
   var g = Grid;
+  // Daily mission routing: the primary action sends the player to the next
+  // unfinished daily game (or Share when all three are done). Archive plays are
+  // outside the daily mission, so they keep their own simple navigation.
+  if (!g.archive && !g.dev) {
+    buildMissionNav("grid", { onShare: function (btn) { window.track("share_click", { mode: "grid" }); copyText(share, btn); } })
+      .forEach(function (n) { kids.push(n); });
+  }
   var navButtons = [
     el("button", { class: "btn ghost", style: "margin-top:10px", text: "Stats", onClick: function () { openStats("grid"); } }),
   ];
@@ -2971,7 +3444,7 @@ function gridResults() {
     navButtons.push(el("button", { class: "btn ghost", style: "margin-top:6px", text: "Back to today's grid", onClick: function () { renderGrid(); } }));
   } else {
     // Archive unlocks only once today's grid is finished.
-    navButtons.push(el("button", { class: "btn primary", style: "margin-top:6px", text: "Past grids", onClick: renderArchive }));
+    navButtons.push(el("button", { class: "btn ghost", style: "margin-top:6px", text: "Past grids", onClick: renderArchive }));
     navButtons.push(el("button", { class: "btn ghost", style: "margin-top:6px", text: "Back to games", onClick: goHome }));
   }
   if (DEV && !g.archive) navButtons.push(el("button", { class: "btn ghost", style: "margin-top:6px", text: "Random grid (dev)", onClick: function () { initGrid(true); paintGrid(); } }));
@@ -3185,6 +3658,7 @@ function renderStreak(mode) {
     Streak = { mode: "free", n: 0, pair: pickPair(null, 0), locked: false, round: 0 };
   }
   paintStreak();
+  if (mode === "ladder") maybeShowRules("ladder");
 }
 function paintStreak() {
   var s = Streak;
@@ -3204,10 +3678,16 @@ function paintStreak() {
     ]),
     barRight,
   ]);
-  var subline = isLadder
-    ? (s.practice ? "Practice run. Your official score is locked for today." : "Ladder #" + gridNumber() + ". Same rungs for everybody.")
-    : "Career Cup Series wins. Tap your pick.";
-  // Mode switch + stats, shown only at the start of a run so play stays clean.
+  var inOvertime = isLadder && s.n >= 20;
+  var subline;
+  if (isLadder) {
+    if (s.practice) subline = "Practice run. Your official score is locked for today.";
+    else if (inOvertime) subline = "Daily cleared. Overtime rung " + (s.n - 20) + ". Keep climbing.";
+    else subline = "Ladder #" + gridNumber() + ". Twenty rungs clears the daily. Same rungs for everybody.";
+  } else {
+    subline = "Career Cup Series wins. Tap your pick.";
+  }
+  // Mode switch + stats + rules, shown only at the start of a run so play stays clean.
   var startRow = null;
   if (s.n === 0) {
     startRow = el("div", { class: "actions", style: "margin-top:12px" }, [
@@ -3215,6 +3695,7 @@ function paintStreak() {
         ? el("button", { class: "btn ghost", text: "Free play", onClick: function () { renderStreak("free"); } })
         : el("button", { class: "btn ghost", text: "Daily ladder", onClick: function () { renderStreak("ladder"); } }),
       el("button", { class: "btn ghost", text: "Stats", onClick: function () { openStats("streak"); } }),
+      rulesButton(isLadder ? "ladder" : "ladder"),
     ]);
   }
   setHubScreen("STREAK",
@@ -3272,37 +3753,48 @@ function answerStreak(pick, btn) {
   }
 }
 // Ladder game over. The rung reached is the number answered correctly. The
-// first completed run of the day becomes the official score; later runs are
-// clearly labeled practice and never overwrite it.
+// official daily is the first 20 rungs; clearing rung 20 wins the daily and
+// everything past it is overtime depth. The first completed run of the day
+// becomes the official score; later runs are practice and never overwrite it.
 function streakLadderOver(cleared) {
   var s = Streak;
   var rung = s.n;
   var isOfficial = recordLadderResult(s.day, rung);
+  if (isOfficial) markSweepIfComplete(s.day);
   window.track("streak_end", { score: rung });
   window.track("game_complete", { mode: "streak_ladder", score: rung });
   var li = ladderStreakInfo();
   var dayNo = gridNumber();
-  var reached = cleared ? "Cleared all " + s.rungs.length + " rungs" : "Made it to rung " + rung;
+  var overtime = Math.max(0, rung - 20);
+  // Three outcomes drive both the on-screen verdict and the share line.
+  var reached, verdictBig;
+  if (rung >= 20 && overtime > 0) { reached = "Cleared it, overtime " + overtime; verdictBig = "OVERTIME " + overtime; }
+  else if (rung >= 20) { reached = "Cleared the daily ladder"; verdictBig = "DAILY CLEARED"; }
+  else { reached = "Made rung " + rung; verdictBig = "RUNG " + rung; }
   var lines = ["THE LINEUP: DAILY LADDER", "Ladder #" + dayNo, reached];
   if (li.current >= 2) lines.push("🔥 " + li.current + " day ladder streak");
-  var share = lines.join("\n") + allegianceBadgeLine() + "\n" + GAME_URL;
+  var share = lines.join("\n") + allegianceBadgeLine() + sweepShareLine() + "\n" + shareURLFor("ladder");
   var copyBtn = el("button", { class: "btn ghost", text: "Copy share text" });
   copyBtn.addEventListener("click", function () { window.track("share_click", { mode: "streak" }); copyText(share, copyBtn); });
+  var officialRung = li.todayRung != null ? li.todayRung : rung;
+  var nav = buildMissionNav("ladder", { onShare: function (btn) { window.track("share_click", { mode: "streak" }); copyText(share, btn); } });
   setHubScreen("STREAK",
     el("div", { class: "checker" }),
-    el("div", { class: "banner " + (rung >= 10 ? "win" : "miss"), style: "margin-top:12px" }, [
-      el("div", { class: "verdict display", text: cleared ? "LADDER CLEARED" : "RUNG " + rung }),
-      el("div", { class: "sub", text: isOfficial ? "Today's official Daily Ladder score." : "Practice run. Your official score stands." }),
+    el("div", { class: "banner " + (rung >= 20 ? "win" : rung >= 10 ? "win" : "miss"), style: "margin-top:12px" }, [
+      el("div", { class: "verdict display", text: verdictBig }),
+      el("div", { class: "sub", text: isOfficial ? "Today's official Daily Ladder run." : "Practice run. Your official score stands." }),
     ]),
     el("div", { class: "sweep", style: "margin:8px 0" }, [
       el("div", { class: "grid" }, [
-        statBox(String(li.todayRung != null ? li.todayRung : rung), "Official rung"),
-        statBox(String(li.bestRung), "Best rung ever"),
+        statBox(String(Math.min(officialRung, 20)), "Official rung"),
+        statBox(String(Math.max(0, officialRung - 20)), "Overtime"),
+        statBox(String(li.bestRung), "Best ever"),
       ]),
     ]),
     el("div", { class: "sharebox", text: share }),
-    el("button", { class: "btn primary", style: "margin-top:4px", text: "Practice again", onClick: function () { window.track("game_replay", { mode: "streak" }); renderStreak("ladder"); } }),
     copyBtn,
+    el("div", { class: "stack", style: "gap:6px;margin-top:8px" }, nav),
+    el("button", { class: "btn ghost", style: "margin-top:6px", text: "Practice again", onClick: function () { window.track("game_replay", { mode: "streak" }); renderStreak("ladder"); } }),
     el("button", { class: "btn ghost", style: "margin-top:6px", text: "Free play", onClick: function () { renderStreak("free"); } }),
     el("button", { class: "btn ghost", style: "margin-top:6px", text: "Stats", onClick: function () { openStats("streak"); } }),
     el("button", { class: "btn ghost", style: "margin-top:6px", text: "Back to games", onClick: goHome })
@@ -3315,7 +3807,7 @@ function streakGameOver(pick, other) {
   window.track("game_complete", { mode: "streak_free", score: s.n });
   var pickN = dn(pick.n), otherN = dn(other.n);
   var lostLine = "Lost on " + pickN + " vs " + otherN + (/\.$/.test(otherN) ? "" : ".");
-  var share = "THE LINEUP STREAK\nI got " + s.n + " straight.\n" + lostLine + "\nNot proud. Playing again." + allegianceBadgeLine() + "\n" + GAME_URL;
+  var share = "THE LINEUP STREAK\nI got " + s.n + " straight.\n" + lostLine + "\nNot proud. Playing again." + allegianceBadgeLine() + "\n" + shareURLFor("ladder");
   var copyBtn = el("button", { class: "btn ghost", text: "Copy share text" });
   copyBtn.addEventListener("click", function () { window.track("share_click", { mode: "streak" }); copyText(share, copyBtn); });
   setHubScreen("STREAK",
@@ -3458,17 +3950,21 @@ function streakStatsBody() {
   if (!d.played && !d.freeBest) return el("div", { class: "stats-empty", text: "No ladders played yet. Climb today's Daily Ladder." });
   var keys = ["0 to 4", "5 to 9", "10 to 14", "15 to 19", "20+"];
   var counts = keys.map(function (k) { return d.buckets[k]; });
+  var todayRaw = d.todayRung;
+  var todayOfficial = todayRaw != null ? Math.min(todayRaw, 20) : null;
+  var todayOT = todayRaw != null ? Math.max(0, todayRaw - 20) : 0;
   return el("div", {}, [
     el("div", { class: "stats-grid" }, [
       statCell(d.played, "Ladders"),
       statCell(d.bestRung, "Best rung"),
-      statCell(d.todayRung != null ? d.todayRung : "-", "Today"),
+      statCell(todayOfficial != null ? todayOfficial : "-", "Today official"),
+      statCell(todayRaw != null ? todayOT : "-", "Today overtime"),
       statCell(d.current, "Ladder streak"),
-      statCell(d.longest, "Longest"),
       statCell(d.freeBest, "Free play best"),
     ]),
     el("div", { class: "reveal-cell-h", text: "Ladder results" }),
     distBars(keys, counts, -1),
+    el("div", { class: "stats-note", text: "Twenty rungs clears the daily. Anything past 20 is overtime depth." }),
   ]);
 }
 function crossEraStatsBody() {
@@ -3479,10 +3975,11 @@ function crossEraStatsBody() {
       statCell(d.played, "Played"),
       statCell(d.wins + "-" + d.losses, "Vs benchmark"),
       statCell(Math.round(100 * d.wins / d.played) + "%", "Win rate"),
+      statCell(crossEraDailyStreak(), "Daily streak"),
       statCell(d.avgWins.toFixed(1), "Avg your wins"),
       statCell(d.avgBench.toFixed(1), "Avg benchmark"),
     ]),
-    el("div", { class: "stats-note", text: "Counts every matchup, daily and free play." }),
+    el("div", { class: "stats-note", text: "Counts every matchup, daily and free play. Daily streak counts days you beat the benchmark." }),
   ]);
 }
 function openStats(mode) {
@@ -3505,9 +4002,23 @@ function openStats(mode) {
   }
   var closeBtn = el("button", { class: "modal-x", text: "×" });
   closeBtn.addEventListener("click", close);
+  // Garage Sweep summary, shown across all tabs (it spans the three games).
+  var sw = sweepInfo();
+  var sweepRow = sw.count > 0
+    ? el("div", { class: "sweep-stat" }, [
+        el("span", { class: "ss-emoji", text: "🧰" }),
+        el("span", { text: "Garage Sweeps " }),
+        el("span", { class: "ss-n", text: String(sw.count) }),
+        el("span", { class: "muted", style: "font-size:12px", text: "  Streak " + sw.current + " · Longest " + sw.longest }),
+      ])
+    : null;
+  // Allegiance control, offered here as well as on the hub and result screens.
+  var al = ALLEGIANCE.get();
+  var allegBtn = el("button", { class: "btn ghost stats-alleg", text: (al && al.driver) ? ("Team " + ALLEGIANCE.teamLabel(al.driver) + " · change") : "Pick your driver" });
+  allegBtn.addEventListener("click", function () { close(); showAllegiancePrompt(false); });
   var panel = el("div", { class: "modal-panel" }, [
     el("div", { class: "modal-head" }, [el("div", { class: "modal-title display", text: "Stats" }), closeBtn]),
-    tabsWrap, body,
+    sweepRow, tabsWrap, body, allegBtn,
   ]);
   overlay.appendChild(panel);
   overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
@@ -3557,28 +4068,64 @@ function renderArchive() {
   );
 }
 
-/* ---------------- boot ---------------- */
-// Internal inspection hook for the Grid (console/testing only, not wired to
-// any UI). Kept for editorial and QA use; see the handoff note.
-window.__GRID_DEBUG__ = { CLUES: CLUES, GPOOL: GPOOL, buildGrid: buildGrid, fullSolution: fullSolution, suggest: suggest, labelFor: labelFor, matchCount: matchCount, themeForDay: THEME.forDay, weekdayForDay: WEEKDAY.forDay };
-// Read-only verification hooks for verify.js, on the same object as the
-// Cross-Era sweep. Accessors only; no game behavior changes.
-if (window.__CROSSERA__) {
-  window.__CROSSERA__.streakPool = SPOOL;
-  window.__CROSSERA__.gridFacts = GF;
-  window.__CROSSERA__.gridBuild = buildGrid;
-  window.__CROSSERA__.gridSolve = fullSolution;
-  window.__CROSSERA__.gridMatch = matchCount;
-  window.__CROSSERA__.themeForDay = THEME.forDay;
-  window.__CROSSERA__.weekdayForDay = WEEKDAY.forDay;
-  window.__CROSSERA__.dailyLadder = dailyLadder;
+/* ---------------- cross-closure contract + boot ---------------- */
+// The Cross-Era closure lives in its own script; the daily mission, navigation,
+// rules, countdown, and its daily persistence are exposed here for it to use.
+window.__LINEUP_MISSION__ = {
+  status: missionStatus,
+  next: nextMissionMode,
+  goto: missionGoto,
+  buildNav: buildMissionNav,
+  crossDailyForDay: crossDailyForDay,
+  crossDailySetIfAbsent: crossDailySetIfAbsent,
+  crossEraDailyStreak: crossEraDailyStreak,
+  markSweepIfComplete: markSweepIfComplete,
+  sweepShareLine: sweepShareLine,
+  offerAllegiance: offerAllegianceAfterGame,
+};
+window.__LINEUP_RULES__ = { show: showRulesOverlay, maybeShow: maybeShowRules, seen: rulesSeen };
+window.__LINEUP_COUNTDOWN__ = { node: countdownNode, clearAll: clearAllCountdowns };
+window.__LINEUP_SHARE_URL__ = shareURLFor;
+
+// Solution-capable inspection hooks. Attached ONLY under the QA gate (dev=1 or
+// a global LINEUP_QA), so a normal public build exposes no window path to a
+// current or future day's answers. verify.js and make-manifest.js set LINEUP_QA
+// in their sandbox, so the harnesses and the manifest generator are unaffected.
+if (QA) {
+  window.__GRID_DEBUG__ = { CLUES: CLUES, GPOOL: GPOOL, buildGrid: buildGrid, fullSolution: fullSolution, suggest: suggest, labelFor: labelFor, matchCount: matchCount, themeForDay: THEME.forDay, weekdayForDay: WEEKDAY.forDay, gridPlanForDay: gridPlanForDay, launchWeek: LAUNCH_WEEK_SEEDS };
+  if (window.__CROSSERA__) {
+    window.__CROSSERA__.streakPool = SPOOL;
+    window.__CROSSERA__.gridFacts = GF;
+    window.__CROSSERA__.gridBuild = buildGrid;
+    window.__CROSSERA__.gridSolve = fullSolution;
+    window.__CROSSERA__.gridMatch = matchCount;
+    window.__CROSSERA__.themeForDay = THEME.forDay;
+    window.__CROSSERA__.weekdayForDay = WEEKDAY.forDay;
+    window.__CROSSERA__.dailyLadder = dailyLadder;
+    window.__CROSSERA__.gridPlanForDay = gridPlanForDay;
+    window.__CROSSERA__.launchWeek = LAUNCH_WEEK_SEEDS;
+  }
 }
 window.__HUB__ = { home: renderHub, allegiancePrompt: showAllegiancePrompt };
-// First visit after this update shows the allegiance prompt once; afterward it
-// never re-prompts (the hub keeps a passive chip instead).
-(function boot() {
+
+// Offer (never force) allegiance after a completed game, if the player has not
+// chosen one and has not already been offered. Called from result screens.
+function offerAllegianceAfterGame() {
   var a = ALLEGIANCE.get();
-  if (!a || !a.prompted) { showAllegiancePrompt(true); return; }
+  if (a && (a.driver || a.prompted)) return;
+  showAllegiancePrompt(false);
+}
+
+// Phase Four boot: new players land directly on the hub. The full-screen
+// "Who's your driver?" wall is gone; allegiance is offered after the first
+// completed game, from Stats, and from the hub chip. A sanitized deep link
+// (#grid, #ladder, #draft) opens that game directly and composes with ?date;
+// an unknown hash falls through to the hub.
+(function boot() {
+  var mode = currentHashMode();
+  if (mode === "grid") { lsSet(LS.lastMode, "grid"); renderGrid(); return; }
+  if (mode === "ladder") { lsSet(LS.lastMode, "streak"); renderStreak("ladder"); return; }
+  if (mode === "crossera") { lsSet(LS.lastMode, "crossera"); if (window.__CROSSERA_MODE__) { window.__CROSSERA_MODE__.enter(); return; } }
   renderHub();
 })();
 })();
