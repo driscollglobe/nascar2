@@ -3320,7 +3320,7 @@ function revealGrid() {
 }
 function gridShareText() {
   var filled = Grid.cells.filter(Boolean);
-  var lines = ["THE LINEUP GRID #" + gridNumber(), gridCorrectCount() + "/9 today"];
+  var lines = ["THE LINEUP GRID #" + gridNumber(), gridCorrectCount() + "/9 today", "Grid Score: " + gridDepthScore() + "/100"];
   if (filled.length) {
     var best = filled.slice().sort(function (a, b) { return LABEL_RANK[b.l] - LABEL_RANK[a.l]; })[0];
     lines.push("Best pick: " + dn(best.n) + " (" + best.l + ")");
@@ -3632,11 +3632,34 @@ function submitGuess(d, row, col) {
   if (g._shake != null && cellNodes[g._shake]) juiceShake(cellNodes[g._shake]);
 }
 
+// Offline skill score (0 to 100). Each box you got right scores by how DEEP your
+// driver is (Common 1 ... Incredible 4), divided by the deepest valid driver
+// available in that box. Fill every box with the deepest legit pick and you hit
+// 100; take the obvious answers or reveal a box and you score lower. Pure,
+// deterministic, no backend, and never a fail state: you always finish.
+function computeGridScore(rows, cols, cells) {
+  var got = 0, max = 0;
+  for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) {
+    var idx = r * 3 + c, boxMax = 0;
+    for (var i = 0; i < GPOOL.length; i++) {
+      if (rows[r].test(GPOOL[i]) && cols[c].test(GPOOL[i])) {
+        var d = (LABEL_RANK[labelFor(GPOOL[i])] || 0) + 1;
+        if (d > boxMax) boxMax = d;
+      }
+    }
+    max += boxMax;
+    var cell = cells && cells[idx];
+    if (cell) got += (LABEL_RANK[cell.l] || 0) + 1;
+  }
+  return max > 0 ? Math.round(100 * got / max) : 0;
+}
+function gridDepthScore() { return computeGridScore(Grid.rows, Grid.cols, Grid.cells); }
 function gridResults() {
   var g = Grid;
   var filled = g.cells.filter(Boolean);
   var rarePlus = filled.filter(function (c) { return LABEL_RANK[c.l] >= 2; }).length;
   var incredible = filled.filter(function (c) { return c.l === "Incredible pick"; }).length;
+  var depthScore = gridDepthScore();
   var share = gridShareText();
   var copyBtn = el("button", { class: "btn primary", style: "margin-top:8px", text: "Copy share text" });
   copyBtn.addEventListener("click", function () { window.track("share_click", { mode: "grid" }); copyText(share, copyBtn); });
@@ -3652,6 +3675,11 @@ function gridResults() {
     el("div", { class: "banner " + (gridCorrectCount() >= 6 ? "win" : "miss"), style: "margin-top:12px" }, [
       el("div", { class: "verdict display", text: gridCorrectCount() + "/9" }),
       el("div", { class: "sub", text: verdict }),
+    ]),
+    el("div", { class: "rarity-hero score-hero" }, [
+      el("div", { class: "rs-k", text: "Grid Score" }),
+      el("div", { class: "rs-n", text: depthScore + " / 100" }),
+      el("div", { class: "rs-rare", text: "Deeper picks score higher. A revealed box counts as zero." }),
     ]),
     el("div", { class: "sweep", style: "margin:8px 0" }, [
       el("div", { class: "grid" }, [
@@ -4360,7 +4388,7 @@ window.__LINEUP_SHARE_URL__ = shareURLFor;
 // current or future day's answers. verify.js and make-manifest.js set LINEUP_QA
 // in their sandbox, so the harnesses and the manifest generator are unaffected.
 if (QA) {
-  window.__GRID_DEBUG__ = { CLUES: CLUES, GPOOL: GPOOL, buildGrid: buildGrid, fullSolution: fullSolution, suggest: suggest, labelFor: labelFor, matchCount: matchCount, themeForDay: THEME.forDay, weekdayForDay: WEEKDAY.forDay, gridPlanForDay: gridPlanForDay, launchWeek: LAUNCH_WEEK_SEEDS, missFeedback: missFeedback, venue: VENUE, driverTrackCount: driverTrackCount, tracks: GF.tracks };
+  window.__GRID_DEBUG__ = { CLUES: CLUES, GPOOL: GPOOL, buildGrid: buildGrid, fullSolution: fullSolution, suggest: suggest, labelFor: labelFor, matchCount: matchCount, themeForDay: THEME.forDay, weekdayForDay: WEEKDAY.forDay, gridPlanForDay: gridPlanForDay, launchWeek: LAUNCH_WEEK_SEEDS, missFeedback: missFeedback, venue: VENUE, driverTrackCount: driverTrackCount, tracks: GF.tracks, computeGridScore: computeGridScore };
   if (window.__CROSSERA__) {
     window.__CROSSERA__.streakPool = SPOOL;
     window.__CROSSERA__.gridFacts = GF;
