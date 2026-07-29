@@ -94,9 +94,11 @@ body {
 .card .driver { font-family: var(--display); font-weight: 700; font-size: 40px; line-height: 0.98; margin: 14px 0 2px; }
 .card .year { font-family: var(--display); font-weight: 600; font-size: 22px; color: var(--muted); }
 .card .hide {
-  margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line);
   display: flex; align-items: center; justify-content: space-between;
 }
+/* Border and spacing only once the tier is revealed, so the pre-decision card
+   has no empty bordered gap. */
+.card.revealed .hide { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
 .card .hide .q { font-family: var(--display); font-weight: 700; font-size: 34px; color: var(--faint); }
 .card .hide .k { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); max-width: 150px; text-align: right; }
 .card .tag.team { color: var(--muted); border-color: var(--line2); font-size: 11px; }
@@ -157,6 +159,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .vs-top.you { align-items: flex-start; text-align: left; }
 .vs-top.them { align-items: flex-end; text-align: right; }
 .vs-top .lbl { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.vs-top .vs-cap { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); margin-top: 2px; }
 .vs-top .tot { font-family: var(--display); font-weight: 700; font-size: 52px; line-height: 0.85; }
 .vs-top.you .tot { color: var(--amber); transition: color 200ms; }
 .vs-top.them .tot { color: var(--text); }
@@ -449,6 +452,9 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .newsletter .nl-link { color: var(--cyan); font-family: var(--display); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-size: 13px; text-decoration: none; }
 .newsletter .nl-link:hover { text-decoration: underline; }
 .newsletter .nl-x { background: transparent; border: none; color: var(--muted); font-size: 20px; line-height: 1; padding: 2px 6px; cursor: pointer; }
+.motorsport-link { text-align: center; margin-top: 12px; }
+.motorsport-link .ms-link { color: var(--muted); font-family: var(--display); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 12px; text-decoration: none; }
+.motorsport-link .ms-link:hover { color: var(--cyan); text-decoration: underline; }
 /* Completed-grid hero: revealed boxes read distinctly from the player's own. */
 .ggrid.done .gcell.reveal { background: var(--panel); border-color: var(--line2); opacity: 0.92; }
 .ggrid.done .gcell.reveal .gc-nm { color: var(--muted); }
@@ -568,6 +574,12 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
   // default, which hides the "Get The Lineup daily" module everywhere. The game
   // never collects an email itself and nothing is ever gated behind signup.
   window.LINEUP_NEWSLETTER_URL = "";
+
+  // Optional outbound link to the parent racing site (beta feedback: "a way to
+  // go to motorsport"). A human supplies the real URL. Empty by default, which
+  // hides the footer link everywhere. (The related "same for 2seats" note was
+  // ambiguous and is left for product to clarify; nothing invented here.)
+  window.LINEUP_MOTORSPORT_URL = "";
 
   // Persistent legal disclaimer, shown in the footer on the hub and in every
   // mode. One source of truth so the wording stays identical everywhere.
@@ -1168,9 +1180,12 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
         el("span", { class: "tag team", text: card.team || "" }),
         el("div", { class: "driver display", text: dn(card.driver) }),
         el("div", { class: "year", text: String(card.year) }),
+        // Tier stays hidden until the player decides (beta feedback removed the
+        // "?" placeholder text). These fill in on reveal via revealCardTier;
+        // empty and borderless until then.
         el("div", { class: "hide" }, [
-          el("span", { class: "q", text: "?" }),
-          el("span", { class: "k", text: "Tier hidden until you decide" }),
+          el("span", { class: "q", text: "" }),
+          el("span", { class: "k", text: "" }),
         ]),
       ]),
     ]);
@@ -1228,11 +1243,12 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
     var youTot = el("div", { class: "tot num", text: "0" });
     var themTot = el("div", { class: "tot num", text: "0" });
     var tops = el("div", { class: "vs-tops" }, [
-      el("div", { class: "vs-top you" }, [el("div", { class: "lbl", text: "Your team" }), youTot]),
+      el("div", { class: "vs-top you" }, [el("div", { class: "lbl", text: "Your team" }), youTot, el("div", { class: "vs-cap", text: "wins" })]),
       el("div", { class: "vs-x display", text: "VS" }),
       el("div", { class: "vs-top them" }, [
         el("div", { class: "lbl", text: orgSeason.year + " " + shortOrg(orgSeason.org) }),
         themTot,
+        el("div", { class: "vs-cap", text: "wins" }),
       ]),
     ]);
 
@@ -1289,9 +1305,12 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
         ]),
       ];
       if (percentile && percentile.lineups > 1) {
-        var pct = (percentile.isBest && percentile.best < orgSeason.benchmarkWins)
-          ? "No winning lineup was reachable from this deal."
-          : "Your team beat " + percentile.beatPct + " percent of all possible lineups from this deal.";
+        // Positive score framing (beta feedback): show the rank, not "12% still
+        // beats you". Top N% = the share of lineups at least as good as yours.
+        var pct;
+        if (percentile.isBest && percentile.best < orgSeason.benchmarkWins) pct = "No winning lineup was reachable from this deal.";
+        else if (percentile.isBest) pct = "Draft rank: best possible lineup from this deal.";
+        else pct = "Draft rank: top " + Math.max(1, 100 - percentile.beatPct) + "% of possible lineups from this deal.";
         kids.push(el("div", { class: "pct" }, [el("span", { class: "pct-v", text: pct })]));
       }
       mount(celebrateHost, el("div", {}, kids));
@@ -2326,6 +2345,15 @@ function newsletterNode() {
   );
   return wrap;
 }
+// Optional outbound link to the parent racing site. Renders only when a human
+// has set the URL; a persistent footer link, not dismissible.
+function motorsportURL() { return window.LINEUP_MOTORSPORT_URL || ""; }
+function motorsportNode() {
+  if (!motorsportURL()) return null;
+  return el("div", { class: "motorsport-link" }, [
+    el("a", { class: "ms-link", href: motorsportURL(), target: "_blank", rel: "noopener noreferrer", text: "More racing at Motorsport" }),
+  ]);
+}
 // The result-screen block shared by all three games. Progress, not obligation:
 // the primary action is Share (grid supplies its own share button and passes
 // skipShare), and a quiet "Play the next one" appears only while games remain.
@@ -2361,6 +2389,8 @@ function buildMissionNav(justFinished, opts) {
   }
   var nl = newsletterNode();
   if (nl) nodes.push(nl);
+  var ms = motorsportNode();
+  if (ms) nodes.push(ms);
   nodes.push(countdownNode());
   return nodes;
 }
@@ -3012,7 +3042,8 @@ function renderHub() {
     allegianceRow(),
     el("div", { class: "hub-cards" }, cards),
     countdownNode("hub-countdown"),
-    newsletterNode()
+    newsletterNode(),
+    motorsportNode()
   );
 }
 // Hub allegiance control: shows the chosen team or a prompt to pick, both open
@@ -3088,7 +3119,7 @@ function showAllegiancePrompt(firstVisit) {
     el("div", { class: "alleg-overlay" }, [
       el("div", { class: "checker" }),
       el("div", { class: "alleg-title display", text: "Who's your driver?" }),
-      el("div", { class: "alleg-sub", text: "Pick a favorite and see how their fans stack up. You can change it anytime." }),
+      el("div", { class: "alleg-sub", text: "Optional. Pick a favorite and a Team badge rides along on the hub and your shares. Never required to play, and you can change it anytime." }),
       el("div", { class: "alleg-search" }, [search]),
       listWrap,
       saveBtn,
