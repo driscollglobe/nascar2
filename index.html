@@ -447,6 +447,12 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .gamecard.played::after { display: none; }
 .gc-check { font-family: var(--display); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; font-size: 12px; color: var(--green); border: 1px solid var(--green); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
 .ladder-desc { text-align: center; color: var(--muted); font-size: 13.5px; margin: 6px 0 2px; }
+.ladder-timer { display: flex; align-items: center; gap: 10px; margin: 8px 0 2px; }
+.ladder-timer .lt-track { flex: 1; height: 8px; border-radius: 999px; background: var(--panel2); border: 1px solid var(--line2); overflow: hidden; }
+.ladder-timer .lt-bar { height: 100%; width: 100%; background: var(--cyan); border-radius: 999px; }
+.ladder-timer .lt-bar.low { background: var(--red); }
+.ladder-timer .lt-num { font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--cyan); min-width: 26px; text-align: right; }
+.ladder-timer .lt-num.low { color: var(--red); }
 .grid-legend { font-size: 12.5px; line-height: 1.4; color: var(--muted); margin: 10px 0 2px; }
 .newsletter { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding: 11px 14px; border: 1px solid var(--line2); border-radius: var(--radius-sm); background: var(--panel2); }
 .newsletter .nl-link { color: var(--cyan); font-family: var(--display); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-size: 13px; text-decoration: none; }
@@ -2927,6 +2933,7 @@ function gridCalendarNode(history) {
   return cal;
 }
 function goHome() {
+  clearLadderTimer();
   if (window.__CROSSERA_MODE__) window.__CROSSERA_MODE__.leave();
   renderHub();
 }
@@ -3893,6 +3900,56 @@ function ladderPickPair(prevPair, round, rng) {
   return [SPOOL[0], SPOOL[SPOOL.length - 1]];
 }
 var LADDER_RUNGS = 64; // at least 60
+
+/* ---------------- Daily Ladder per-rung timer ----------------
+   A countdown on each Daily Ladder matchup: decide before it runs out or the
+   run ends (a timeout counts as a wrong answer, which is Streak's existing fail
+   behavior, not the Grid's no-fail rule). Ten seconds beats a Google-and-compare
+   while staying a gut-instinct call. Tune it here, one line. The clock pauses
+   while a modal (rules or stats) is open, and does not run during the between
+   rungs reveal or in Free play. The seeded, shared ladder is unchanged: this is
+   a client-side UX layer only. */
+var LADDER_TIMER_MS = 10000;
+function clearLadderTimer() { if (Streak && Streak._timer) { clearInterval(Streak._timer); Streak._timer = null; } }
+function paintLadderTimer(remain) {
+  var bar = document.getElementById("ladderTimerBar");
+  var num = document.getElementById("ladderTimerNum");
+  var frac = Math.max(0, Math.min(1, remain / LADDER_TIMER_MS));
+  if (bar) { bar.style.width = (frac * 100) + "%"; bar.classList.toggle("low", remain <= 3000); }
+  if (num) { num.textContent = String(Math.max(0, Math.ceil(remain / 1000))); num.classList.toggle("low", remain <= 3000); }
+}
+function startLadderTimer() {
+  clearLadderTimer();
+  var s = Streak;
+  if (!s || s.mode !== "ladder" || s.locked) return;
+  s._remain = LADDER_TIMER_MS;
+  paintLadderTimer(s._remain);
+  s._timer = setInterval(function () {
+    if (!Streak || Streak.mode !== "ladder" || Streak.locked || activeMode !== "streak") { clearLadderTimer(); return; }
+    // Pause while a rules/stats modal is open.
+    if (document.querySelector(".modal-overlay")) return;
+    Streak._remain -= 100;
+    paintLadderTimer(Streak._remain);
+    if (Streak._remain <= 0) { clearLadderTimer(); ladderTimeout(); }
+  }, 100);
+}
+// Timeout ends the run exactly like a wrong pick: reveal both totals, mark the
+// higher-win driver, then go to the game-over screen.
+function ladderTimeout() {
+  var s = Streak;
+  if (!s || s.mode !== "ladder" || s.locked) return;
+  s.locked = true; s.timedOut = true;
+  var a = s.pair[0], b = s.pair[1];
+  var hi = a.w >= b.w ? a : b;
+  var nodes = document.querySelectorAll(".duelcard");
+  for (var i = 0; i < nodes.length; i++) {
+    var nm = nodes[i].getAttribute("data-nm");
+    var d = nm === a.n ? a : b;
+    nodes[i].querySelector(".dc-w").textContent = String(d.w);
+    if (nm === hi.n) nodes[i].classList.add("right");
+  }
+  setTimeout(function () { streakLadderOver(false); }, 1400);
+}
 function dailyLadder(dayStr) {
   var rng = rngFromSeed("ladder|" + dayStr);
   var rungs = [], prev = null;
@@ -3939,6 +3996,7 @@ function streakYears(d) {
 // overwrite the official first-run score.
 function renderStreak(mode) {
   if (!SPOOL.length) { renderHub(); return; }
+  clearLadderTimer();
   activeMode = "streak";
   mode = mode || "ladder";
   window.track("game_start", { mode: mode === "ladder" ? "streak_ladder" : "streak_free" });
@@ -3992,6 +4050,12 @@ function paintStreak() {
       rulesButton(isLadder ? "ladder" : "ladder"),
     ]);
   }
+  // Daily Ladder is timed (Free play is not). The bar is JS-driven so it works
+  // under reduced motion too; startLadderTimer runs it after the DOM mounts.
+  var timerNode = (isLadder && !s.locked) ? el("div", { class: "ladder-timer" }, [
+    el("div", { class: "lt-track" }, [el("div", { class: "lt-bar", id: "ladderTimerBar" })]),
+    el("div", { class: "lt-num", id: "ladderTimerNum", text: String(Math.ceil(LADDER_TIMER_MS / 1000)) }),
+  ]) : null;
   setHubScreen("STREAK",
     el("div", { class: "checker thin" }),
     bar,
@@ -4000,9 +4064,11 @@ function paintStreak() {
     isLadder && s.practice ? el("div", { class: "practice-flag", text: "PRACTICE" }) : null,
     el("div", { class: "duelq", text: "Who had more career wins?" }),
     el("div", { class: "duelsub", text: subline }),
+    timerNode,
     el("div", { class: "duel" }, [duelCard(s.pair[0]), el("div", { class: "vsline", text: "VS" }), duelCard(s.pair[1])]),
     startRow
   );
+  if (isLadder && !s.locked) startLadderTimer();
 }
 function duelCard(d) {
   var btn = el("button", { class: "duelcard", "data-nm": d.n }, [
@@ -4016,6 +4082,7 @@ function duelCard(d) {
 function answerStreak(pick, btn) {
   var s = Streak;
   if (s.locked) return;
+  clearLadderTimer(); // answered in time
   s.locked = true;
   var a = s.pair[0], b = s.pair[1];
   var other = pick.n === a.n ? b : a;
@@ -4054,6 +4121,7 @@ function answerStreak(pick, btn) {
 // becomes the official score; later runs are practice and never overwrite it.
 function streakLadderOver(cleared) {
   var s = Streak;
+  clearLadderTimer();
   var rung = s.n;
   var isOfficial = recordLadderResult(s.day, rung);
   if (isOfficial) markSweepIfComplete(s.day);
@@ -4078,7 +4146,7 @@ function streakLadderOver(cleared) {
     el("div", { class: "checker" }),
     el("div", { class: "banner " + (rung >= 20 ? "win" : rung >= 10 ? "win" : "miss"), style: "margin-top:12px" }, [
       el("div", { class: "verdict display", text: verdictBig }),
-      el("div", { class: "sub", text: isOfficial ? "Today's official Daily Ladder run." : "Practice run. Your official score stands." }),
+      el("div", { class: "sub", text: (s.timedOut ? "Ran out of time. " : "") + (isOfficial ? "Today's official Daily Ladder run." : "Practice run. Your official score stands.") }),
     ]),
     el("div", { class: "sweep", style: "margin:8px 0" }, [
       el("div", { class: "grid" }, [
