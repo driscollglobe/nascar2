@@ -7,7 +7,9 @@
  * UTC days and verifies each one is winnable.
  *
  * Usage:
- *   node tools/sweep.js [n]              balance sweep over n matchups (default 200)
+ *   node tools/sweep.js [n] [--gate]     balance sweep over n matchups (default 200);
+ *                                        with --gate, exit 1 if any matchup is
+ *                                        unwinnable or order-repaired (CI check)
  *   node tools/sweep.js --daily [days]   verify the daily matchup for the next
  *                                        <days> UTC days from today (default 365)
  */
@@ -45,7 +47,7 @@ const args = process.argv.slice(2);
 if (args[0] === "--daily") {
   dailyCheck(parseInt(args[1], 10) || 365);
 } else {
-  const n = parseInt(args[0], 10) || 200;
+  const n = parseInt(args.filter((a) => !a.startsWith("--"))[0], 10) || 200;
   const start = Date.now();
   const s = ce.runSweep(n);
   console.log("balance sweep: " + s.n + " cross-era matchups (" + s.playableTargets + " playable of " + s.totalTargets + " org seasons)");
@@ -61,4 +63,8 @@ if (args[0] === "--daily") {
     .map((k) => k + ":" + s.benchDist[k]).join(" ");
   console.log("  benchmark distribution: " + dist);
   console.log("  (" + ((Date.now() - start) / 1000).toFixed(1) + "s)");
+  if (args.includes("--gate") && (s.unwinnable > 0 || s.repaired > 0)) {
+    console.error("GATE FAILED: unwinnable " + s.unwinnable + ", repaired " + s.repaired);
+    process.exit(1);
+  }
 }

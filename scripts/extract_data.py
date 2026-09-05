@@ -109,6 +109,7 @@ def main():
         ("window.__STREAK_POOL__ = ", "streak_pool"),
         ("window.__LEGEND_POOL__ = ", "legend_pool"),
         ("window.__GRID_FACTS__ = ", "grid_facts"),
+        ("window.__RACE_PICKS__ = ", "race_picks"),
     ]:
         s, e = find_value_span(html, assign)
         spans.append((s, e, name))

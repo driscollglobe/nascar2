@@ -25,6 +25,11 @@ against data/ and copy it over only after review):
                            complete season)
   org-seasons FROM TO      Cross-Era orgSeasons records (same range)
   streak-pool              Streak pool (career totals, clean 1972+ window)
+  picks                    write data/race_picks.json for Race Picks: playoff
+                           schedule, playoff field, and classifications for
+                           completed playoff races; fails closed (exit
+                           non-zero, nothing written) on missing results, a
+                           thin field, or an empty future schedule
   streak-refresh           refresh w for the existing data/streak_pool.json
                            drivers from race-winner classifications
                            (1973..current, cached per season); exits 2 if any
@@ -534,6 +539,191 @@ def cmd_streak_refresh():
     if decreases:
         print("STOP: %d driver(s) decreased; ingest mismatch, do not replace data/." % len(decreases))
         sys.exit(2)
+    # --apply: copy the refreshed pool into data/ (used by the weekly action).
+    # Fails closed: any unmatched driver blocks the apply, not just decreases.
+    if "--apply" in sys.argv:
+        if missing:
+            print("STOP: unmatched drivers block --apply.")
+            sys.exit(2)
+        (ROOT / "data" / "streak_pool.json").write_text(
+            json.dumps(updated, separators=(",", ":")), encoding="utf-8")
+        print("applied to data/streak_pool.json")
+
+
+def et_to_utc(date_str, time_str):
+    """A calendar session date+startTime interpreted as US Eastern, in UTC ISO.
+    The MSS docs do not state the calendar timezone; the Daytona 500 shows
+    14:30, the series' famous 2:30pm Eastern slot, so Eastern is the reading
+    (UTC would put it mid-morning). If the feed is actually track-local time,
+    the Eastern reading locks early, never late."""
+    from zoneinfo import ZoneInfo
+    naive = datetime.strptime(date_str + " " + time_str, "%Y-%m-%d %H:%M:%S")
+    local = naive.replace(tzinfo=ZoneInfo("America/New_York"))
+    return local.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def cmd_picks():
+    """Build data/race_picks.json for the Race Picks mode: playoff schedule,
+    playoff field, and classifications for completed playoff races. Everything
+    is derived from MSS; the command fails closed (exit non-zero, nothing
+    written) when any completed playoff race lacks a classification, the field
+    has fewer than 8 drivers, or the schedule holds no future race."""
+    year = datetime.now(timezone.utc).year
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    status, season = season_for_year(year)
+    if season is None:
+        sys.exit("picks: no season for %d (HTTP %d)" % (year, status))
+
+    # Playoff boundary from the standings' per-event points: the reset shows as
+    # a season-points jump no single race could produce (leader gains > 500).
+    status, j = get("seasonDriverRanking/ofSeason/" + season["uuid"])
+    if status != 200 or not j or not j.get("content"):
+        sys.exit("picks: seasonDriverRanking HTTP %d" % status)
+    ranking = j["content"][0].get("ranking") or []
+    if not ranking:
+        sys.exit("picks: empty ranking")
+    ranking.sort(key=lambda r: r.get("position") or 999)
+    leader = ranking[0]
+    evrows = sorted(leader.get("events") or [], key=lambda e: e.get("eventNumber") or 0)
+    # The reset lands ON the regular-season finale's standings row (that row
+    # already shows the 2000+ playoff points), so the playoffs start at the
+    # NEXT event.
+    boundary = None
+    prev = None
+    for e in evrows:
+        sp = e.get("seasonPoints")
+        if prev is not None and sp is not None and sp - prev > 500:
+            boundary = (e.get("eventNumber") or 0) + 1
+            break
+        if sp is not None:
+            prev = sp
+    if boundary is None and prev is not None and (leader.get("points") or 0) - prev > 500:
+        boundary = (evrows[-1].get("eventNumber") or 0) + 1
+    if boundary is None:
+        sys.exit("picks: no playoff reset visible in standings; not in playoffs")
+
+    # Playoff field: the reset group, cut at the largest points gap near the top.
+    top = [r for r in ranking[:24] if r.get("points") is not None]
+    cut, biggest = None, 0.0
+    for i in range(len(top) - 1):
+        gap = top[i]["points"] - top[i + 1]["points"]
+        if gap > biggest:
+            biggest, cut = gap, i + 1
+    field_rows = top[:cut] if cut else []
+    if len(field_rows) < 8:
+        sys.exit("picks: playoff field has %d drivers (need 8+); refusing to write" % len(field_rows))
+
+    # Calendar: playoff events (number >= boundary) with race date and start time.
+    status, cal = get("seasonCalendar/" + season["uuid"])
+    if status != 200 or not cal:
+        sys.exit("picks: seasonCalendar HTTP %d" % status)
+    schedule = []
+    playoff_events = sorted([e for e in cal.get("events") or [] if (e.get("number") or 0) >= boundary],
+                            key=lambda e: e.get("number") or 0)
+    # The calendar can list an event number twice; keep one row per number,
+    # preferring the one that carries a scheduled Race session time.
+    by_number = {}
+    for e in playoff_events:
+        n = e.get("number")
+        has_time = any((s.get("type") == "Race" or s.get("name") == "Race") and s.get("startTime") not in (None, "00:00:00")
+                       for s in e.get("sessions") or [])
+        if n not in by_number or (has_time and not by_number[n][1]):
+            by_number[n] = (e, has_time)
+    playoff_events = [v[0] for k, v in sorted(by_number.items())]
+    for e in playoff_events:
+        race_sessions = [s for s in e.get("sessions") or [] if s.get("type") == "Race" or s.get("name") == "Race"]
+        start_utc = None
+        rs = race_sessions[0] if race_sessions else None
+        if rs and rs.get("date") and rs.get("startTime") and rs["startTime"] != "00:00:00":
+            start_utc = et_to_utc(rs["date"], rs["startTime"])
+        schedule.append({
+            "id": e["uuid"], "number": e.get("number"),
+            "race": normws(e.get("name")), "track": normws((e.get("venue") or {}).get("name")),
+            "raceDate": e.get("raceDate") or e.get("endDate"),
+            "startUtc": start_utc,
+        })
+    if not any((r["raceDate"] or "") >= today for r in schedule):
+        sys.exit("picks: schedule has zero future races; refusing to write")
+
+    # Results for completed playoff races; also car/org per field driver from
+    # the season's classifications (positive evidence, latest race wins).
+    results = {}
+    car_org = {}  # driver uuid -> {car, org}
+    for e in playoff_events:
+        if (e.get("raceDate") or e.get("endDate") or "9999") >= today:
+            continue
+        rows = {}
+        seen = set()
+        for race in get_all("race/ofEvent/" + e["uuid"]):
+            for sref in race.get("sessions") or []:
+                if sref.get("name") != "Race" or sref["uuid"] in seen:
+                    continue
+                seen.add(sref["uuid"])
+                st, cj = get("sessionClassification/ofSession/" + sref["uuid"])
+                if st != 200 or not cj:
+                    continue
+                for row in cj.get("classificationDetails") or []:
+                    pos = row_position(row)
+                    drefs = row.get("drivers") or []
+                    if pos and drefs and drefs[0].get("name"):
+                        rows[normws(drefs[0]["name"])] = pos
+        if not rows:
+            sys.exit("picks: completed playoff race '%s' (%s) has no classification; refusing to write"
+                     % (e.get("name"), e.get("raceDate")))
+        results[e["uuid"]] = rows
+
+    field_uuids = set()
+    for r in field_rows:
+        d = r.get("driver") or {}
+        if d.get("uuid"):
+            field_uuids.add(d["uuid"])
+    all_events = sorted(cal.get("events") or [], key=lambda e: e.get("number") or 0, reverse=True)
+    for e in all_events:
+        if len(car_org) >= len(field_uuids):
+            break
+        if (e.get("raceDate") or e.get("endDate") or "9999") >= today:
+            continue
+        seen = set()
+        for race in get_all("race/ofEvent/" + e["uuid"]):
+            for sref in race.get("sessions") or []:
+                if sref.get("name") != "Race" or sref["uuid"] in seen:
+                    continue
+                seen.add(sref["uuid"])
+                st, cj = get("sessionClassification/ofSession/" + sref["uuid"])
+                if st != 200 or not cj:
+                    continue
+                for row in cj.get("classificationDetails") or []:
+                    for ent in row.get("entries") or []:
+                        du = (ent.get("driver") or {}).get("uuid")
+                        if du in field_uuids and du not in car_org:
+                            car_org[du] = {
+                                "car": normws(ent.get("carNumber") or row.get("car") or ""),
+                                "org": normws((ent.get("team") or {}).get("name") or ent.get("teamEntrantName") or ""),
+                            }
+    field = []
+    for r in field_rows:
+        d = r.get("driver") or {}
+        extra = car_org.get(d.get("uuid")) or {}
+        if not extra.get("car") or not extra.get("org"):
+            sys.exit("picks: no car/org found in classifications for %s; refusing to write" % normws(d.get("name")))
+        field.append({"driver": normws(d.get("name")), "car": extra["car"], "org": extra["org"]})
+
+    out = {
+        "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "seasonYear": year,
+        "schedule": schedule,
+        "field": field,
+        "results": results,
+    }
+    path = ROOT / "data" / "race_picks.json"
+    path.write_text(json.dumps(out, separators=(",", ":")), encoding="utf-8")
+    print("wrote %s" % path)
+    print("playoff boundary: event #%d | schedule: %d races | field: %d drivers | completed with results: %d"
+          % (boundary, len(schedule), len(field), len(results)))
+    for r in schedule:
+        print("  #%d %s | %s | race %s | green flag UTC %s" % (r["number"], r["race"], r["track"], r["raceDate"], r["startUtc"] or "not published"))
+    for f in field:
+        print("  field: %s | #%s | %s" % (f["driver"], f["car"], f["org"]))
 
 
 def cmd_test():
@@ -568,6 +758,8 @@ def main():
             write_out("org_seasons.json", build_org_seasons(seasons))
     elif cmd == "streak-refresh":
         cmd_streak_refresh()
+    elif cmd == "picks":
+        cmd_picks()
     elif cmd in ("streak-pool", "grid-facts"):
         seasons = collect_seasons(1972, now_year - 1)
         if cmd == "streak-pool":

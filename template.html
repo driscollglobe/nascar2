@@ -465,6 +465,23 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .ggrid.done .gcell.reveal { background: var(--panel); border-color: var(--line2); opacity: 0.92; }
 .ggrid.done .gcell.reveal .gc-nm { color: var(--muted); }
 .gcell .gc-shown { font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin-top: 2px; }
+/* Race Picks (Mode Four) */
+.pickstack { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.pickrow {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; text-align: left; background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: 9px 12px; color: var(--text);
+  cursor: pointer; font: inherit; font-size: 13.5px;
+}
+.pickrow:hover { border-color: var(--line2); }
+.pickrow .pr-car { color: var(--faint); font-size: 12px; margin-left: 6px; }
+.pickrow .pr-org { display: block; color: var(--muted); font-size: 11.5px; }
+.pickrow .pr-tag { font-family: var(--display); font-size: 12px; letter-spacing: 0.08em; white-space: nowrap; }
+.pickrow.win { border-color: var(--amber); background: linear-gradient(180deg, rgba(242, 229, 0, 0.1), var(--panel)); }
+.pickrow.win .pr-tag { color: var(--amber); }
+.pickrow.sel { border-color: var(--cyan); }
+.pickrow.sel .pr-tag { color: var(--cyan); }
+.picks-count { font-family: var(--display); font-size: 13px; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; }
 </style>
 </head>
 <body>
@@ -618,8 +635,8 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
    keys live under this namespace, and the hub migrates launch-build (v2)
    keys forward on boot so no player loses their streak or best.
    ========================================================================= */
-  window.__LINEUP_DATA_VERSION__ = 5;
-  window.__LINEUP_NS__ = "lineupHub:v5:";
+  window.__LINEUP_DATA_VERSION__ = 6;
+  window.__LINEUP_NS__ = "lineupHub:v6:";
 
 /* =========================================================================
    THEME_CALENDAR (editor block, edit like the data blocks).
@@ -2005,6 +2022,422 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 
 <script>window.__GRID_FACTS__ = @@DATA:grid_facts@@;</script>
 
+<!-- Race Picks data: MSS-derived playoff schedule, playoff field, and
+     finishing positions for completed playoff races (data/race_picks.json,
+     regenerated weekly by scripts/pull_mss.py picks). Lock times are the MSS
+     scheduled green flag read as US Eastern; a race with no published time
+     locks at 00:00 UTC on race day, the early side, so picks can never be
+     changed after the green flag. Names are raw MSS strings; the canonical
+     name table resolves display forms at render time. -->
+<script>window.__RACE_PICKS__ = @@DATA:race_picks@@;</script>
+
+<script>
+(function () {
+"use strict";
+
+/* =========================================================================
+   The Lineup. Race Picks (Mode Four).
+
+   Weekly playoff pick em. One winner call plus four more drivers for a top
+   five, picked from the MSS playoff field. Picks are stored locally under
+   the shared namespace and lock at the scheduled green flag. Results arrive
+   with the weekly data refresh; nothing is fetched at runtime.
+
+   Scoring: 10 points for the correct winner call, 3 points for each pick
+   that finishes in the top five, 1 point for each pick that finishes sixth
+   through tenth. The winner call also counts as a pick, so a correct call
+   is worth 13 on its own. Running total across the remaining playoff races.
+   A race that ran before the player made picks is skipped, never scored.
+   No prizes, no leaderboard, no sign in.
+   ========================================================================= */
+
+  var DATA = window.__RACE_PICKS__ || { schedule: [], field: [], results: {} };
+  var CANON = window.__LINEUP_CANON__ || { name: function (s) { return String(s); } };
+  var VENUE = window.__LINEUP_VENUE__ || { display: function (x) { return x; } };
+  var NS = window.__LINEUP_NS__ || "lineupHub:";
+  var GAME_URL = window.__LINEUP_URL__ || "";
+  function dn(name) { return CANON.name(name); }
+  function shareURL() { return (window.__LINEUP_SHARE_URL__ ? window.__LINEUP_SHARE_URL__("picks") : GAME_URL); }
+  var RULES = null;
+  function refreshServices() { RULES = window.__LINEUP_RULES__ || null; }
+
+  var LS_KEY = NS + "picks";
+  function loadAll() { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}") || {}; } catch (e) { return {}; } }
+  function saveAll(obj) { try { localStorage.setItem(LS_KEY, JSON.stringify(obj || {})); } catch (e) {} }
+
+  var SCHEDULE = (DATA.schedule || []).slice().sort(function (a, b) { return a.number - b.number; });
+  var FIELD = DATA.field || [];
+  var RESULTS = DATA.results || {};
+
+  // One clock accessor so the whole mode agrees about "now".
+  function nowMs() { return Date.now(); }
+  function lockMs(race) {
+    if (race.startUtc) return Date.parse(race.startUtc);
+    return Date.parse(race.raceDate + "T00:00:00Z");
+  }
+  function resultsFor(race) { return RESULTS[race.id] || null; }
+  function isLocked(race) { return nowMs() >= lockMs(race); }
+  // The race the player acts on: the first playoff race with no results yet.
+  function currentRace() {
+    for (var i = 0; i < SCHEDULE.length; i++) if (!resultsFor(SCHEDULE[i])) return SCHEDULE[i];
+    return null;
+  }
+  function picksFor(race) { return loadAll()[race.id] || null; }
+  function setPicks(race, p) { var all = loadAll(); all[race.id] = p; saveAll(all); }
+  function pickList(p) {
+    var out = [];
+    if (p && p.winner) out.push(p.winner);
+    ((p && p.others) || []).forEach(function (n) { out.push(n); });
+    return out;
+  }
+  function isComplete(p) { return !!(p && p.winner && p.others && p.others.length === 4); }
+
+  function scoreRace(race, p) {
+    var res = resultsFor(race);
+    if (!res || !p) return null;
+    var rows = [], total = 0, winnerHit = false;
+    pickList(p).forEach(function (name, i) {
+      var pos = res[name] || null;
+      var pts = 0;
+      if (pos && pos <= 5) pts += 3;
+      else if (pos && pos <= 10) pts += 1;
+      if (i === 0 && pos === 1) { pts += 10; winnerHit = true; }
+      total += pts;
+      rows.push({ name: name, winnerCall: i === 0, pos: pos, pts: pts });
+    });
+    return { total: total, rows: rows, winnerHit: winnerHit };
+  }
+  // Scored weeks: races with results that the player had picks stored for.
+  // A race that ran with no picks stored is skipped, never shown as a zero.
+  function scoredWeeks() {
+    var out = [];
+    SCHEDULE.forEach(function (race) {
+      var pk = picksFor(race);
+      if (!resultsFor(race) || !pk) return;
+      var s = scoreRace(race, pk);
+      if (s) out.push({ race: race, picks: pk, score: s });
+    });
+    return out;
+  }
+  function seasonTotal() {
+    return scoredWeeks().reduce(function (a, w) { return a + w.score.total; }, 0);
+  }
+  function trackName(race) { return VENUE.display(race.track); }
+
+  function fmtET(ms) {
+    try {
+      return new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York", weekday: "short", month: "short",
+        day: "numeric", hour: "numeric", minute: "2-digit",
+      }).format(new Date(ms)) + " ET";
+    } catch (e) { return new Date(ms).toUTCString(); }
+  }
+  function fmtLeft(ms) {
+    var s = Math.max(0, Math.floor(ms / 1000));
+    var d = Math.floor(s / 86400); s -= d * 86400;
+    var h = String(Math.floor(s / 3600)).padStart(2, "0");
+    var m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+    var ss = String(s % 60).padStart(2, "0");
+    return (d > 0 ? d + "d " : "") + h + ":" + m + ":" + ss;
+  }
+  // Post-lock countdown target: the Monday morning after the race, when the
+  // weekly refresh lands (results are final as of Monday morning US Eastern).
+  function resultsTargetMs(race) {
+    var ms = Date.parse(race.raceDate + "T00:00:00Z");
+    var d = new Date(ms);
+    var add = (8 - d.getUTCDay()) % 7 || 7;
+    return ms + add * 86400000 + 13 * 3600000;
+  }
+
+  /* ---------------- dom helpers (house pattern, closure-local) ---------------- */
+  function el(tag, props, children) {
+    props = props || {}; children = children == null ? [] : children;
+    var node = document.createElement(tag);
+    for (var k in props) {
+      var v = props[k];
+      if (v === null || v === undefined || v === false) continue;
+      if (k === "class") node.className = v;
+      else if (k === "html") node.innerHTML = v;
+      else if (k === "text") node.textContent = v;
+      else if (k.indexOf("on") === 0 && typeof v === "function") node.addEventListener(k.slice(2).toLowerCase(), v);
+      else node.setAttribute(k, v);
+    }
+    var kids = Array.isArray(children) ? children : [children];
+    for (var i = 0; i < kids.length; i++) {
+      var c = kids[i];
+      if (c === null || c === undefined || c === false) continue;
+      node.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    }
+    return node;
+  }
+  function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); return node; }
+  function mount(parent) {
+    for (var i = 1; i < arguments.length; i++) if (arguments[i]) parent.appendChild(arguments[i]);
+    return parent;
+  }
+  function copyText(text, btn) {
+    var done = function () {
+      var old = btn.textContent;
+      btn.textContent = "Copied";
+      setTimeout(function () { btn.textContent = old; }, 1400);
+    };
+    var fallback = function () {
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "absolute"; ta.style.left = "-9999px";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta); done();
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else fallback();
+  }
+  function stat(v, k, color) {
+    return el("div", { class: "stat" }, [
+      el("div", { class: "v", style: color ? "color:" + color : "", text: v }),
+      el("div", { class: "k", text: k }),
+    ]);
+  }
+
+  var App = { root: null, timers: [] };
+  function clearTimers() {
+    App.timers.forEach(function (t) { clearInterval(t); });
+    App.timers = [];
+  }
+  function topbar() {
+    return el("header", { class: "topbar" }, [
+      el("div", { class: "brand" }, [
+        el("button", { class: "btn ghost", style: "padding:7px 11px;font-size:14px", text: "‹ Games", onClick: function () { clearTimers(); if (window.__HUB__) window.__HUB__.home(); } }),
+        el("span", { class: "wordmark", text: "RACE PICKS" }),
+      ]),
+      el("div", { class: "row", style: "gap:8px;align-items:center" }, [
+        RULES ? el("button", { class: "rules-btn", text: "Rules", title: "How to play", onClick: function () { RULES.show("picks"); } }) : null,
+        el("span", { class: "era-tag", text: (DATA.seasonYear || "") + " Playoffs" }),
+      ]),
+    ]);
+  }
+  function footer() {
+    return el("footer", { class: "foot" }, [
+      el("div", { text: "Schedule, entries and results from Motorsport Stats." }),
+      el("div", { style: "margin-top:6px", text: "Results are final as of Monday morning US Eastern. Not affiliated with or endorsed by NASCAR." }),
+      el("div", { style: "margin-top:6px", text: window.__LINEUP_LEGAL__ || "" }),
+    ]);
+  }
+  function setScreen() {
+    clearTimers();
+    var frag = el("div", { class: "stack grow" }, Array.prototype.slice.call(arguments));
+    clear(App.root);
+    mount(App.root, topbar(), frag, footer());
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------------- screens ---------------- */
+  function raceHeader(race) {
+    var locked = isLocked(race);
+    var cd = el("div", { class: "countdown", id: "picksCountdown" });
+    function tick() {
+      if (!locked && isLocked(race)) { render(); return; }
+      if (locked) cd.textContent = "Results in " + fmtLeft(resultsTargetMs(race) - nowMs());
+      else cd.textContent = "Picks lock in " + fmtLeft(lockMs(race) - nowMs());
+    }
+    tick();
+    App.timers.push(setInterval(tick, 1000));
+    var lockLine = race.startUtc
+      ? "Green flag " + fmtET(lockMs(race))
+      : "Green flag time not published yet. Picks lock " + race.raceDate + " at 00:00 UTC.";
+    return el("section", { class: "benchmark" }, [
+      el("div", { class: "label", text: locked ? "Locked in" : "This week" }),
+      el("div", { class: "org", text: race.race }),
+      el("div", { class: "meta" }, [
+        el("span", { class: "muted", style: "font-size:12.5px", text: trackName(race) }),
+        el("span", { class: "muted", style: "font-size:12.5px", text: lockLine }),
+      ]),
+      cd,
+    ]);
+  }
+  function pickCount(p) {
+    var n = pickList(p).length;
+    return n + " of 5 picked" + (p && p.winner ? "" : " · winner first");
+  }
+  function togglePick(race, name) {
+    if (isLocked(race)) { render(); return; }
+    var p = picksFor(race) || { winner: null, others: [] };
+    var i = p.others.indexOf(name);
+    if (p.winner === name) p.winner = null;
+    else if (i >= 0) p.others.splice(i, 1);
+    else if (!p.winner) p.winner = name;
+    else if (p.others.length < 4) p.others.push(name);
+    else { flashHint("Five picks max. Tap a pick to clear it."); return; }
+    setPicks(race, p);
+    window.track("picks_saved", { count: pickList(p).length });
+    render();
+  }
+  var _hintOverride = null;
+  function flashHint(msg) {
+    _hintOverride = msg;
+    render();
+    _hintOverride = null;
+  }
+  function pickPanel(race) {
+    var p = picksFor(race) || { winner: null, others: [] };
+    var hint = _hintOverride
+      || (!p.winner ? "Tap your winner first."
+        : p.others.length < 4 ? "Now " + (4 - p.others.length) + " more for your top five."
+        : "Locked in at the green flag. Change picks any time before then.");
+    var rows = FIELD.map(function (f) {
+      var isW = p.winner === f.driver;
+      var isO = p.others.indexOf(f.driver) >= 0;
+      return el("button", { class: "pickrow" + (isW ? " win" : isO ? " sel" : ""), onClick: function () { togglePick(race, f.driver); } }, [
+        el("span", {}, [
+          el("span", { text: dn(f.driver) }),
+          el("span", { class: "pr-car", text: "#" + f.car }),
+          el("span", { class: "pr-org", text: f.org }),
+        ]),
+        el("span", { class: "pr-tag", text: isW ? "WINNER" : isO ? "TOP 5" : "" }),
+      ]);
+    });
+    return el("div", {}, [
+      el("div", { class: "row spread", style: "margin-top:10px" }, [
+        el("div", { class: "section-title", style: "margin:0", text: "The playoff field" }),
+        el("div", { class: "picks-count", text: pickCount(p) }),
+      ]),
+      el("div", { class: "lede", style: "font-size:13px;margin:4px 0 2px", text: hint }),
+      el("div", { class: "pickstack" }, rows),
+      el("div", { class: "lede", style: "font-size:12.5px", text: "Ten points for the correct winner. Three for each pick in the top five, one for sixth through tenth. Picks save on this device." }),
+    ]);
+  }
+  function lockedPanel(race) {
+    var p = picksFor(race);
+    if (!p || !pickList(p).length) {
+      return el("div", { class: "lede", style: "margin-top:12px", text: "No picks this week. The next race opens after results land." });
+    }
+    var rows = pickList(p).map(function (name, i) {
+      return el("div", { class: "ans mine" }, [
+        el("span", {}, [
+          el("span", { text: dn(name) }),
+          i === 0 ? el("span", { class: "tag-deep", text: "  Winner call" }) : null,
+        ]),
+        el("span", { class: "r", text: "Locked" }),
+      ]);
+    });
+    return el("div", {}, [
+      el("div", { class: "section-title", text: "Your picks" }),
+      el("div", { class: "answers" }, rows),
+      el("div", { class: "lede", style: "font-size:12.5px", text: "Picks are locked for this race. Scores land with Monday's results." }),
+    ]);
+  }
+  function shareText(week) {
+    var s = week.score;
+    var em = s.rows.map(function (r) {
+      return r.pos && r.pos <= 5 ? "🟩" : r.pos && r.pos <= 10 ? "🟨" : "⬛";
+    }).join("");
+    var lines = [
+      "THE LINEUP: RACE PICKS",
+      week.race.race,
+      (s.winnerHit ? "Called the winner. " : "") + "This week: " + s.total + (s.total === 1 ? " point." : " points.") + " Season: " + seasonTotal() + ".",
+      em,
+    ];
+    var badge = window.__LINEUP_BADGE__ ? window.__LINEUP_BADGE__() : "";
+    return lines.join("\n") + badge + "\n" + shareURL();
+  }
+  function scoreCard(week, isFinal) {
+    var s = week.score;
+    var cls = s.winnerHit ? "victory" : s.total > 0 ? "win" : "miss";
+    var sub = week.race.race + ". " + (s.winnerHit ? "You called the winner." : s.total > 0 ? "Points on the board." : "Shut out this week.");
+    var rows = s.rows.map(function (r) {
+      return el("div", { class: "ans" + (r.pts > 0 ? " mine" : "") }, [
+        el("span", {}, [
+          el("span", { text: dn(r.name) }),
+          r.winnerCall ? el("span", { class: "tag-deep", text: "  Winner call" }) : null,
+        ]),
+        el("span", { class: "r", text: (r.pos ? "P" + r.pos : "no finish recorded") + (r.pts > 0 ? " · +" + r.pts : "") }),
+      ]);
+    });
+    var share = shareText(week);
+    var copyBtn = el("button", { class: "btn primary", text: "Copy share text" });
+    copyBtn.addEventListener("click", function () { window.track("share_click", { mode: "picks" }); copyText(share, copyBtn); });
+    return el("div", {}, [
+      el("div", { class: "section-title", text: isFinal ? "Final week" : "Last week" }),
+      el("div", { class: "banner " + cls }, [
+        el("div", { class: "verdict display", text: s.total + " PTS" }),
+        el("div", { class: "sub", text: sub }),
+      ]),
+      el("div", { class: "answers" }, rows),
+      el("div", { class: "sweep", style: "margin:8px 0" }, [
+        el("div", { class: "grid" }, [
+          stat(String(s.total), "This week"),
+          stat(String(seasonTotal()), "Season total", "var(--amber)"),
+          stat(String(scoredWeeks().length), "Weeks scored"),
+        ]),
+      ]),
+      el("div", { class: "section-title", text: "Share it" }),
+      el("div", { class: "sharebox", text: share }),
+      copyBtn,
+    ]);
+  }
+  function seasonRows(weeks) {
+    var rows = weeks.map(function (w) {
+      return el("div", { class: "ans" }, [
+        el("span", { text: trackName(w.race) }),
+        el("span", { class: "r", text: w.score.total + " pts" }),
+      ]);
+    });
+    return el("div", {}, [
+      el("div", { class: "section-title", text: "Your season" }),
+      el("div", { class: "answers" }, rows),
+    ]);
+  }
+
+  function render() {
+    var race = currentRace();
+    var weeks = scoredWeeks();
+    var last = weeks.length ? weeks[weeks.length - 1] : null;
+    var parts = [el("div", { class: "checker" })];
+    if (race) {
+      parts.push(raceHeader(race));
+      parts.push(isLocked(race) ? lockedPanel(race) : pickPanel(race));
+    } else {
+      parts.push(el("div", { class: "lede", style: "margin-top:10px", text: "The playoffs are done. Season total below. See you at the 500." }));
+    }
+    if (last) parts.push(scoreCard(last, !race));
+    if (weeks.length > 1) parts.push(seasonRows(weeks));
+    parts.push(el("div", { class: "actions", style: "margin-top:10px" }, [
+      el("button", { class: "btn ghost", text: "Back to games", onClick: function () { clearTimers(); if (window.__HUB__) window.__HUB__.home(); } }),
+    ]));
+    setScreen.apply(null, parts);
+  }
+
+  // Hub tile status line. Kept here so the schedule logic has one owner.
+  window.__PICKS_INFO__ = function () {
+    var race = currentRace();
+    var weeks = scoredWeeks();
+    var total = seasonTotal();
+    if (!race) {
+      return { stat: weeks.length ? "Season total: " + total + " pts" : "Playoffs complete", played: false };
+    }
+    var p = picksFor(race);
+    if (!isLocked(race)) {
+      var lockTxt = race.startUtc ? "locks " + fmtET(lockMs(race)) : "locks " + race.raceDate + " 00:00 UTC";
+      return { stat: trackName(race) + " " + lockTxt, played: isComplete(p) };
+    }
+    var last = weeks.length ? weeks[weeks.length - 1] : null;
+    if (last) return { stat: "This week: " + last.score.total + " pts · Season: " + total, played: true };
+    return { stat: trackName(race) + " is locked. Results Monday morning.", played: !!p };
+  };
+
+  window.__PICKS_MODE__ = {
+    enter: function () {
+      refreshServices();
+      App.root = document.getElementById("app");
+      window.track("game_start", { mode: "picks" });
+      render();
+      if (RULES) RULES.maybeShow("picks");
+    },
+    leave: function () { clearTimers(); },
+  };
+})();
+</script>
+
 <script>
 (function () {
 "use strict";
@@ -2016,12 +2449,10 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
      DAILY GRID   3x3 knowledge grid. Public. Labeled "Today's Game".
      STREAK       endless "who had more Cup wins?" higher/lower. Public.
      CROSS-ERA    sign/pass draft against a real team season. Public.
-     RACE PICKS   teaser only, "Coming for the playoffs". Not built yet.
+     RACE PICKS   weekly playoff pick em against the MSS schedule. Public.
 
-   Race Picks and Paint Booth are intentionally absent as playable modes:
-   Race Picks is a teaser card pending the race-weekend product work, and
-   Paint Booth was removed from the hub entirely pending image rights and
-   product and legal review. Do not re-add either as a game mode here.
+   Paint Booth remains absent pending image rights and product and legal
+   review. Do not re-add it as a game mode here.
 
    Data sources, per mode:
      CROSS-ERA    the Motorsport Stats org-season dataset (__LINEUP_DATA__),
@@ -2034,6 +2465,9 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
                   won, active seasons. Championships, car makes and car
                   numbers are absent from the pull, so those clue types do
                   not exist and are never described in the marketing copy.
+     RACE PICKS   MSS playoff schedule, field and race classifications
+                  (__RACE_PICKS__), regenerated weekly; scores are computed
+                  locally against those finishing positions.
    ========================================================================= */
 
 var $app = document.getElementById("app");
@@ -2053,7 +2487,7 @@ var ALLEGIANCE = window.__LINEUP_ALLEGIANCE__ || { get: function () { return nul
 // The hub owns the persisted keys, so it runs the launch-build (v2) migration
 // on boot: any v2 key is copied forward to v3 if the v3 key is absent, so no
 // streak, best, or in-progress grid is lost across the version bump.
-var DATA_VERSION = window.__LINEUP_DATA_VERSION__ || 5;
+var DATA_VERSION = window.__LINEUP_DATA_VERSION__ || 6;
 var NS = window.__LINEUP_NS__ || ("lineupHub:v" + DATA_VERSION + ":");
 var LS = {
   grid: NS + "grid:",               // + UTC day key
@@ -2105,13 +2539,13 @@ function gridPlanForDay(dk) {
 }
 
 // One-time forward migration of older-namespace keys. Copies any key from a
-// prior version to its v5 equivalent when the v5 key is absent, newest source
+// prior version to its v6 equivalent when the v6 key is absent, newest source
 // first so nothing is lost and nothing older overwrites something newer. Covers
 // v2 and v3 in one pass, so a device on any prior build migrates cleanly.
 (function migrateStorage() {
   try {
     if (!window.localStorage) return;
-    ["lineupHub:v4:", "lineupHub:v3:", "lineupHub:v2:"].forEach(function (oldPrefix) {
+    ["lineupHub:v5:", "lineupHub:v4:", "lineupHub:v3:", "lineupHub:v2:"].forEach(function (oldPrefix) {
       var keys = [];
       for (var i = 0; i < localStorage.length; i++) {
         var k = localStorage.key(i);
@@ -2396,8 +2830,9 @@ var RULES_COPY = {
   grid: "Fill each box with a driver who matches both clues. Each driver can be used once. Guess freely; wrong guesses cost nothing.",
   ladder: "Pick the driver with more career Cup wins. One wrong answer ends your official run. Twenty rungs clears the daily.",
   crossera: "Sign drivers to beat the real team's season win total. Passes are limited. A driver's wins are revealed after you decide.",
+  picks: "Call the race winner, then four more for your top five. Picks lock at the green flag. Ten points for the winner, three for a top five finish, one for sixth through tenth.",
 };
-var RULES_TITLE = { grid: "Daily Grid", ladder: "Daily Ladder", crossera: "Cross-Era Draft" };
+var RULES_TITLE = { grid: "Daily Grid", ladder: "Daily Ladder", crossera: "Cross-Era Draft", picks: "Race Picks" };
 function rulesSeen(game) { return lsGet(LS.rulesSeen + game) === "1"; }
 function markRulesSeen(game) { lsSet(LS.rulesSeen + game, "1"); }
 // A tiny 3x3 example rendered with the live grid styles: one clue pair, one
@@ -2499,8 +2934,8 @@ function countdownNode(cls) {
 /* ---------------- deep links (#grid #ladder #draft) ----------------
    A sanitized hash opens a game directly and composes with ?date= preview.
    Every share URL carries its mode hash. Unknown hashes fall through to hub. */
-var HASH_TO_MODE = { "grid": "grid", "ladder": "ladder", "draft": "crossera", "crossera": "crossera" };
-var MODE_TO_HASH = { grid: "grid", ladder: "ladder", crossera: "draft" };
+var HASH_TO_MODE = { "grid": "grid", "ladder": "ladder", "draft": "crossera", "crossera": "crossera", "picks": "picks" };
+var MODE_TO_HASH = { grid: "grid", ladder: "ladder", crossera: "draft", picks: "picks" };
 function currentHashMode() {
   var raw = String(location.hash || "").replace(/^#/, "").toLowerCase().replace(/[^a-z]/g, "");
   return HASH_TO_MODE[raw] || null;
@@ -2922,6 +3357,7 @@ function gridCalendarNode(history) {
 function goHome() {
   clearLadderTimer();
   if (window.__CROSSERA_MODE__) window.__CROSSERA_MODE__.leave();
+  if (window.__PICKS_MODE__) window.__PICKS_MODE__.leave();
   renderHub();
 }
 function renderHub() {
@@ -3008,9 +3444,16 @@ function renderHub() {
     })
   );
 
-  // 4. Race Picks teaser, "Coming for the playoffs". Not a playable mode.
+  // 4. Race Picks, weekly playoff pick em. Live as of the 2026 playoffs.
+  var pk = window.__PICKS_INFO__ ? window.__PICKS_INFO__() : null;
   cards.push(
-    gameCard({ title: "Race Picks", tag: "Coming for the playoffs", soon: true, desc: "Set your Sunday lineup. Coming for the playoffs." })
+    gameCard({
+      title: "Race Picks", tag: "Set Your Sunday",
+      played: !!(pk && pk.played),
+      desc: "Call the winner and a top five from the playoff field. Picks lock at the green flag.",
+      stat: pk ? pk.stat : null,
+      onClick: function () { lsSet(LS.lastMode, "picks"); if (window.__PICKS_MODE__) window.__PICKS_MODE__.enter(); },
+    })
   );
 
   window.track("hub_impression", {});
@@ -4477,6 +4920,7 @@ function offerAllegianceAfterGame() {
   if (mode === "grid") { lsSet(LS.lastMode, "grid"); renderGrid(); return; }
   if (mode === "ladder") { lsSet(LS.lastMode, "streak"); renderStreak("ladder"); return; }
   if (mode === "crossera") { lsSet(LS.lastMode, "crossera"); if (window.__CROSSERA_MODE__) { window.__CROSSERA_MODE__.enter(); return; } }
+  if (mode === "picks") { lsSet(LS.lastMode, "picks"); if (window.__PICKS_MODE__) { window.__PICKS_MODE__.enter(); return; } }
   renderHub();
 })();
 })();

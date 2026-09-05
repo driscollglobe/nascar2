@@ -1,0 +1,63 @@
+name: Weekly MSS refresh
+
+# Regenerates the MSS-backed datasets every Monday morning UTC (after NASCAR
+# results are final), rebuilds index.html, gates on the Cross-Era sweep, and
+# pushes only when something actually changed. Run it by hand from the Actions
+# tab via workflow_dispatch.
+
+on:
+  schedule:
+    - cron: "0 10 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # The pull scripts read the key from .env; stdlib only, nothing to install.
+      - name: Write .env from the MSS_API_KEY secret
+        env:
+          MSS_API_KEY: ${{ secrets.MSS_API_KEY }}
+        run: |
+          if [ -z "$MSS_API_KEY" ]; then echo "MSS_API_KEY secret is not set"; exit 1; fi
+          echo "MSS_API_KEY=$MSS_API_KEY" > .env
+
+      - name: Pull Race Picks data (fails closed)
+        run: python3 scripts/pull_mss.py picks
+
+      - name: Refresh Streak pool (fails closed)
+        run: python3 scripts/pull_mss.py streak-refresh --apply
+
+      - name: Build index.html
+        run: python3 build.py
+
+      - name: Cross-Era sweep gate
+        run: node tools/sweep.js 200 --gate
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "lineup-weekly-refresh"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html data/
+          if git diff --cached --quiet; then
+            echo "No data changes this week."
+          else
+            git commit -m "Weekly MSS refresh"
+            git push origin main
+          fi
