@@ -482,6 +482,53 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .pickrow.sel { border-color: var(--cyan); }
 .pickrow.sel .pr-tag { color: var(--cyan); }
 .picks-count { font-family: var(--display); font-size: 13px; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; }
+/* ============================================================
+   HUB DESIGN PASS: the Two Seats design standard. Keyframes
+   dealIn, flip and dealpulse are ported verbatim from Two Seats.
+   ============================================================ */
+@keyframes dealIn{from{opacity:0;translate:0 -42px}to{opacity:1;translate:0 0}}
+@keyframes flip{0%{transform:rotateY(0)}45%{transform:rotateY(86deg);opacity:.35}100%{transform:rotateY(0);opacity:1}}
+@keyframes dealpulse{0%,100%{transform:scale(1);box-shadow:0 8px 24px rgba(242,229,0,.18)}50%{transform:scale(1.03);box-shadow:0 10px 30px rgba(242,229,0,.42)}}
+.card.flip{animation:flip .38s ease}
+.btn.pulse,.welcome-cta.pulse{animation:dealpulse 2s ease-in-out infinite}
+.dealin{opacity:0;animation:dealIn .3s cubic-bezier(.2,.7,.3,1) forwards}
+.card.dealing{opacity:0;animation:dealIn .3s cubic-bezier(.2,.7,.3,1) forwards}
+@media (prefers-reduced-motion: reduce){
+  .card.flip,.btn.pulse,.welcome-cta.pulse{animation:none}
+  .dealin,.card.dealing{animation:none;opacity:1}
+}
+
+/* header brand: Motorsport.com line (Two Seats .brandlogo height) + wordmark */
+.brand-col{display:flex;flex-direction:column;gap:7px;align-items:flex-start}
+.brandline{font-family:var(--display);font-weight:700;font-size:20px;line-height:20px;letter-spacing:.05em;text-transform:uppercase;color:var(--text)}
+.brandline .tld{color:var(--amber)}
+.lineup-logo{display:block;height:auto}
+.topbar .lineup-logo{width:158px}
+
+/* first-run welcome, the Two Seats .mbox.welcome construction */
+.welcome-overlay{position:fixed;inset:0;background:rgba(6,9,14,.82);display:flex;align-items:center;justify-content:center;padding:18px;z-index:70}
+.welcome-box{background:var(--panel);border:1px solid var(--line2);border-radius:16px;max-width:480px;width:100%;text-align:center;padding:30px 26px 24px;max-height:92dvh;overflow:auto}
+.welcome-box .lineup-logo{width:min(190px,56%);margin:2px auto 16px}
+.welcome-hook{font-family:var(--display);font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:var(--text);margin:0 0 18px}
+.welcome-cards{display:flex;flex-direction:column;gap:10px;margin:0 0 20px;text-align:left}
+.wc-card{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:10px;padding:11px 13px}
+.wc-name{font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--amber)}
+.wc-desc{font-size:13.5px;line-height:1.5;color:#cfd6de;margin-top:3px}
+.welcome-cta{display:block;width:100%;font-family:var(--display);font-size:17px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#0e131a;background:var(--amber);border:0;border-radius:12px;padding:15px;cursor:pointer;box-shadow:0 8px 24px rgba(242,229,0,.18)}
+.welcome-cta:hover{background:var(--amber2)}
+.welcome-credit{font-family:var(--display);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-top:14px}
+
+/* cross-era card, Two Seats card type scale */
+.card .body{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center}
+.card .body .hide{width:100%}
+.card .cy{font-family:var(--display);font-size:17px;letter-spacing:.18em;color:var(--amber);font-weight:700}
+.card .cn{font-family:var(--display);font-size:30px;font-weight:700;line-height:1.05;text-transform:uppercase}
+.card .csub{font-family:var(--display);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.cmark{display:flex;flex-direction:column;align-items:center;gap:5px;margin-top:2px}
+.cmark::before{content:"";display:block;width:44px;height:1px;background:var(--amber)}
+.cmark span{font-family:var(--display);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);font-weight:700}
+.card.legend{border-color:var(--amber);box-shadow:0 0 0 1px rgba(242,229,0,.35),0 0 26px rgba(242,229,0,.22),0 18px 40px rgba(0,0,0,.45)}
+.card.legend .stripe{background:linear-gradient(90deg,var(--amber),var(--amber2) 45%,var(--amber))}
 </style>
 </head>
 <body>
@@ -933,6 +980,37 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
     return out;
   }
 
+  /* ---------------- career marks (design pass) ----------------
+     Championship counts VERIFIED from MSS season final standings (position 1
+     in seasonDriverRanking, seasons 1957 and 1961 through 2025; MSS serves no
+     final ranking for 1949 to 1956 or 1958 to 1960, so titles from those years
+     are not counted here). Every draftable card season is 1983 or later, so no
+     driver who can appear on a card is undercounted by that gap. Regenerate
+     with scripts/pull_mss.py champions. Keys are canonical display names. */
+  var CHAMPIONS = {
+    "Dale Earnhardt Sr.": 7, "Jimmie Johnson": 7, "Richard Petty": 7,
+    "Jeff Gordon": 4,
+    "Cale Yarborough": 3, "Darrell Waltrip": 3, "David Pearson": 3, "Joey Logano": 3, "Tony Stewart": 3,
+    "Joe Weatherly": 2, "Kyle Busch": 2, "Kyle Larson": 2, "Terry Labonte": 2,
+    "Alan Kulwicki": 1, "Benny Parsons": 1, "Bill Elliott": 1, "Bobby Allison": 1, "Bobby Isaac": 1,
+    "Bobby Labonte": 1, "Brad Keselowski": 1, "Buck Baker": 1, "Chase Elliott": 1, "Dale Jarrett": 1,
+    "Kevin Harvick": 1, "Kurt Busch": 1, "Martin Truex Jr.": 1, "Matt Kenseth": 1, "Ned Jarrett": 1,
+    "Rex White": 1, "Rusty Wallace": 1, "Ryan Blaney": 1
+  };
+  function championsOf(driver) { return CHAMPIONS[dn(driver)] || 0; }
+  // Legend aura: membership in the official-records legend pool. That data is
+  // a LATER script block, so it is resolved lazily and a miss is never cached.
+  var _legendSet = null;
+  function isLegend(driver) {
+    if (!_legendSet) {
+      var lp = window.__LEGEND_POOL__;
+      if (!lp) return false;
+      _legendSet = {};
+      lp.forEach(function (d) { _legendSet[dn(d.n)] = 1; });
+    }
+    return !!_legendSet[dn(driver)];
+  }
+
   /* ---------------- tiers (copied from src/game/tiers.js) ---------------- */
   var TIER_META = {
     LEGEND: { label: "LEGEND", color: "var(--amber)", rank: 5 },
@@ -1197,15 +1275,18 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 
   /* ---------------- driver card (copied from src/ui/cards.js, year shown) ---------------- */
   function driverCard(card, dealing) {
-    return el("article", { class: "card" + (dealing ? " dealing" : "") }, [
+    // Two Seats card type scale: amber eyebrow year, 30px condensed name,
+    // 10.5px letterspaced org line. Permanent career marks live on the face
+    // (championships, legend aura); the SEASONAL tier stays hidden until the
+    // player decides, then reveals with the flip.
+    var champs = championsOf(card.driver);
+    return el("article", { class: "card" + (dealing ? " dealing" : "") + (isLegend(card.driver) ? " legend" : "") }, [
       el("div", { class: "stripe" }),
       el("div", { class: "body" }, [
-        el("span", { class: "tag team", text: card.team || "" }),
-        el("div", { class: "driver display", text: dn(card.driver) }),
-        el("div", { class: "year", text: String(card.year) }),
-        // Tier stays hidden until the player decides (beta feedback removed the
-        // "?" placeholder text). These fill in on reveal via revealCardTier;
-        // empty and borderless until then.
+        el("div", { class: "cy", text: String(card.year) }),
+        el("div", { class: "cn", text: dn(card.driver) }),
+        el("div", { class: "csub", text: card.team || "" }),
+        champs > 0 ? el("div", { class: "cmark" }, [el("span", { text: "CHAMPION x " + champs })]) : null,
         el("div", { class: "hide" }, [
           el("span", { class: "q", text: "" }),
           el("span", { class: "k", text: "" }),
@@ -1592,7 +1673,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
       (App.isDaily && App.theme) ? el("div", { class: "theme-accent", text: App.theme.label }) : null,
       el("div", { class: "lede", text: "Build a lineup from NASCAR history and beat a real team's season. Sign or pass one driver at a time, any season since 1983. " + passes + " " + (passes === 1 ? "pass" : "passes") + ". A famous name in a down year is a trap." }),
       benchmarkHero(os),
-      el("button", { class: "btn primary", style: "margin-top:14px", text: "Play matchup", onClick: function () { startRun(App.isDaily ? App.dailySeed : null, false); } }),
+      el("button", { class: "btn primary pulse", style: "margin-top:14px", text: "Play matchup", onClick: function () { startRun(App.isDaily ? App.dailySeed : null, false); } }),
       el("div", { class: "actions", style: "margin-top:10px" }, actionKids)
     );
   }
@@ -1681,11 +1762,15 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
     var k = cardNode.querySelector(".hide .k");
     if (q) { q.textContent = t.label; q.style.color = t.color; q.style.fontSize = "20px"; }
     if (k) k.textContent = action === "sign" ? "Signed" : "Passed";
+    // The Two Seats flip: the tier reveal is the payoff.
+    cardNode.classList.remove("flip"); void cardNode.offsetWidth; cardNode.classList.add("flip");
     cardNode.classList.add("revealed");
   }
 
+  var revealHold = false; /* input locked while a reveal is on screen (Two Seats pattern) */
   function doAction(kind) {
     var eng = App.engine;
+    if (revealHold) return;
     if (kind === "sign" && !eng.canSign()) return;
     if (kind === "pass" && !eng.canPass()) return;
     var stage = document.getElementById("stage");
@@ -1699,7 +1784,15 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
       else { paintStatus(); dealCurrentCard(false); }
     };
     if (reduced || !cardNode) apply();
-    else { cardNode.classList.add("leaving"); setTimeout(apply, 420); }
+    else {
+      // Hold the flipped tier on screen (Two Seats holds its reveal too),
+      // then ease the card out. Presentation timing only.
+      revealHold = true;
+      setTimeout(function () {
+        cardNode.classList.add("leaving");
+        setTimeout(function () { revealHold = false; apply(); }, 200);
+      }, 620);
+    }
   }
 
   // Share string for a finished matchup. One emoji per seat: green when your
@@ -2485,6 +2578,18 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 
 var $app = document.getElementById("app");
 
+// The Lineup wordmark: inline SVG in the Two Seats game-logo construction
+// (condensed uppercase, amber accent, transparent background). One string,
+// sized by context via the .lineup-logo class.
+var LINEUP_LOGO_SVG =
+  '<svg class="lineup-logo" viewBox="0 0 320 92" role="img" aria-label="The Lineup">' +
+  '<rect x="1" y="4" width="11" height="11" fill="var(--amber)" transform="rotate(45 6.5 9.5)"/>' +
+  '<text x="26" y="20" style="font-family:var(--display);font-weight:700;font-size:21px;letter-spacing:.32em;fill:var(--amber)">THE</text>' +
+  '<text x="0" y="82" style="font-family:var(--display);font-weight:700;font-size:70px;letter-spacing:.015em;fill:var(--text)">LINE<tspan fill="var(--amber)">UP</tspan></text>' +
+  '<rect x="2" y="88" width="150" height="4" fill="var(--amber)"/>' +
+  '<rect x="158" y="88" width="20" height="4" fill="var(--line2)"/>' +
+  '</svg>';
+
 var DEV = /[?&]dev=1/.test(location.search);
 var GAME_URL = window.__LINEUP_URL__ || "";
 var CANON = window.__LINEUP_CANON__ || { name: function (s) { return String(s); }, short: function (s, d) { return d || String(s); } };
@@ -2817,7 +2922,7 @@ function buildMissionNav(justFinished, opts) {
     nodes.push(shareBtn);
   }
   // Secondary, and only when there is an unplayed daily game left.
-  var next = nextMissionMode(justFinished);
+  var next = opts.skipNext ? null : nextMissionMode(justFinished);
   if (next) {
     nodes.push(el("button", { class: "btn ghost", style: "margin-top:6px", text: "Play the next one", onClick: function () { missionGoto(next); } }));
   }
@@ -2910,6 +3015,49 @@ function rulesButton(game) {
   return el("button", { class: "rules-btn", title: "How to play", "aria-label": "How to play", text: "Rules", onClick: function () { showRulesOverlay(game); } });
 }
 
+/* ---------------- first-run welcome (Two Seats construction) ----------------
+   Wordmark, one line on what the hub is, one card per daily mode, one amber
+   CTA into Today's Game. Seen flag lives in the lineupHub namespace. The
+   welcome covers the Grid rules, so it also marks that overlay seen; the
+   Ladder and Cross-Era overlays still teach at first entry. */
+var WELCOME_SEEN = NS + "welcomeSeen";
+function welcomeSeen() { return lsGet(WELCOME_SEEN) === "1"; }
+function wcCard(name, desc) {
+  return el("div", { class: "wc-card" }, [
+    el("div", { class: "wc-name", text: name }),
+    el("div", { class: "wc-desc", text: desc }),
+  ]);
+}
+function showWelcome(reopen) {
+  lsSet(WELCOME_SEEN, "1");
+  markRulesSeen("grid");
+  var overlay = el("div", { class: "welcome-overlay" });
+  function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); document.removeEventListener("keydown", onKey); }
+  function onKey(e) { if (e.key === "Escape") close(); }
+  var cta = el("button", { class: "welcome-cta pulse", text: "Play today's grid" });
+  cta.addEventListener("click", function () {
+    close();
+    lsSet(LS.lastMode, "grid");
+    if (activeMode !== "grid" || !Grid || Grid.date !== dayKey()) renderGrid();
+  });
+  var box = el("div", { class: "welcome-box" }, [
+    el("div", { html: LINEUP_LOGO_SVG }),
+    el("p", { class: "welcome-hook", text: "Daily stock car games built on real results." }),
+    el("div", { class: "welcome-cards" }, [
+      wcCard("Daily Grid", "Nine boxes. Name a driver who fits the row and the column. Wrong guesses cost nothing."),
+      wcCard("Daily Ladder", "Pick who has more career Cup wins. Twenty rungs clears the daily. One miss ends the run."),
+      wcCard("Cross-Era Draft", "Sign drivers from any era to beat a real team's season. Tiers are revealed after you decide."),
+    ]),
+    cta,
+    el("div", { class: "welcome-credit", text: "Data by Motorsport Stats" }),
+  ]);
+  overlay.appendChild(box);
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
+  document.addEventListener("keydown", onKey);
+  document.body.appendChild(overlay);
+  window.track("welcome_shown", { reopen: !!reopen });
+}
+
 /* ---------------- reset countdown (shared UTC rollover) ----------------
    Result screens and the hub footer show a live "New games in HH:MM:SS" to the
    next midnight UTC. Never shown during active gameplay. Reduced-motion users
@@ -2947,7 +3095,7 @@ function countdownNode(cls) {
 /* ---------------- deep links (#grid #ladder #draft) ----------------
    A sanitized hash opens a game directly and composes with ?date= preview.
    Every share URL carries its mode hash. Unknown hashes fall through to hub. */
-var HASH_TO_MODE = { "grid": "grid", "ladder": "ladder", "draft": "crossera", "crossera": "crossera", "picks": "picks" };
+var HASH_TO_MODE = { "grid": "grid", "ladder": "ladder", "draft": "crossera", "crossera": "crossera", "picks": "picks", "hub": "hub" };
 var MODE_TO_HASH = { grid: "grid", ladder: "ladder", crossera: "draft", picks: "picks" };
 function currentHashMode() {
   var raw = String(location.hash || "").replace(/^#/, "").toLowerCase().replace(/[^a-z]/g, "");
@@ -3314,12 +3462,12 @@ function hubTopbar(modeLabel) {
         el("button", { class: "btn ghost", style: "padding:7px 11px;font-size:14px", text: "‹ Games", onClick: goHome }),
         el("span", { class: "wordmark", text: modeLabel }),
       ])
-    : el("div", { class: "brand" }, [
-        el("span", { class: "wordmark", text: "THE LINEUP" }),
-        el("span", { class: "dot display", text: "●" }),
-        el("span", { class: "mode", text: "Unofficial stock car racing games." }),
+    : el("div", { class: "brand brand-col" }, [
+        el("div", { class: "brandline", html: 'MOTORSPORT<span class="tld">.COM</span>' }),
+        el("div", { html: LINEUP_LOGO_SVG }),
       ]);
-  return el("header", { class: "topbar" }, [left]);
+  var right = modeLabel ? null : el("button", { class: "btn ghost", style: "padding:7px 11px;font-size:13px", text: "How to play", onClick: function () { showWelcome(true); } });
+  return el("header", { class: "topbar" }, [left, right]);
 }
 function hubFooter() {
   return el("footer", { class: "foot" }, [
@@ -3937,6 +4085,17 @@ function paintGrid() {
   }
   if (DEV) parts.push(qaPanel(g));
   setHubScreen(g.archive ? "PAST GRIDS" : "DAILY GRID", el("div", { class: "stack" }, parts));
+  // Two Seats deal-in on entry: the nine boxes drop into place once per visit.
+  if (!g._dealtIn) {
+    g._dealtIn = 1;
+    if (!g.done && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
+      var dealCells = document.querySelectorAll(".gcell");
+      for (var dc = 0; dc < dealCells.length; dc++) {
+        dealCells[dc].classList.add("dealin");
+        dealCells[dc].style.animationDelay = (dc * 45) + "ms";
+      }
+    }
+  }
   // One-time Garage Find shimmer, fired when a garage cell is first shown as one.
   g._shimmered = g._shimmered || {};
   var nodes = document.querySelectorAll(".gcell");
@@ -4139,6 +4298,22 @@ function gridResults() {
       ]),
     ])
   );
+  // Finish sheet next steps: hand the player the other two daily games.
+  if (!g.archive && !g.dev) {
+    var msNext = missionStatus();
+    kids.push(el("div", { class: "actions", style: "margin-top:10px" }, [
+      el("button", {
+        class: "btn " + (!msNext.ladder ? "primary pulse" : "ghost"),
+        text: msNext.ladder ? "Ladder played" : "Climb the ladder",
+        onClick: function () { lsSet(LS.lastMode, "streak"); renderStreak("ladder"); },
+      }),
+      el("button", {
+        class: "btn " + (msNext.ladder && !msNext.crossera ? "primary pulse" : "ghost"),
+        text: msNext.crossera ? "Cross-Era played" : "Cross-Era Draft",
+        onClick: function () { lsSet(LS.lastMode, "crossera"); if (window.__CROSSERA_MODE__) window.__CROSSERA_MODE__.enter(); },
+      }),
+    ]));
+  }
   var summ = gridRaritySummary();
   if (summ && !summ.pending) {
     var heroKids = [
@@ -4166,7 +4341,7 @@ function gridResults() {
   // unfinished daily game (or Share when all three are done). Archive plays are
   // outside the daily mission, so they keep their own simple navigation.
   if (!g.archive && !g.dev) {
-    buildMissionNav("grid", { skipShare: true })
+    buildMissionNav("grid", { skipShare: true, skipNext: true })
       .forEach(function (n) { kids.push(n); });
   }
   var navButtons = [
@@ -4934,7 +5109,18 @@ function offerAllegianceAfterGame() {
   if (mode === "ladder") { lsSet(LS.lastMode, "streak"); renderStreak("ladder"); return; }
   if (mode === "crossera") { lsSet(LS.lastMode, "crossera"); if (window.__CROSSERA_MODE__) { window.__CROSSERA_MODE__.enter(); return; } }
   if (mode === "picks") { lsSet(LS.lastMode, "picks"); if (window.__PICKS_MODE__) { window.__PICKS_MODE__.enter(); return; } }
-  renderHub();
+  if (mode === "hub") { renderHub(); return; }
+  // Design pass: the Daily Grid is the landing view. The tile menu lives
+  // behind the Games header button and the #hub deep link. First run gets
+  // the welcome overlay on top of the grid.
+  lsSet(LS.lastMode, "grid");
+  if (!welcomeSeen()) {
+    markRulesSeen("grid");
+    renderGrid();
+    showWelcome(false);
+  } else {
+    renderGrid();
+  }
 })();
 })();
 </script>

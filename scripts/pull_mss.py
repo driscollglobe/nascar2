@@ -726,6 +726,47 @@ def cmd_picks():
         print("  field: %s | #%s | %s" % (f["driver"], f["car"], f["org"]))
 
 
+def cmd_champions():
+    """Career Cup championship counts per driver, from MSS season final
+    standings (seasonDriverRanking position 1 for every completed season,
+    1949 through last year). Prints a JS object literal keyed by canonical
+    display name, for inlining as the Cross-Era card CHAMPION table."""
+    year_to = datetime.now(timezone.utc).year - 1
+    counts = {}
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    cache = CACHE_DIR / "champions.json"
+    if cache.exists():
+        champs = json.loads(cache.read_text())
+    else:
+        champs = {}
+        for y in range(1949, year_to + 1):
+            status, season = season_for_year(y)
+            if season is None:
+                print("no season %d (HTTP %d)" % (y, status), file=sys.stderr)
+                continue
+            status, j = get("seasonDriverRanking/ofSeason/" + season["uuid"])
+            if status != 200 or not j or not j.get("content"):
+                print("no ranking %d (HTTP %d)" % (y, status), file=sys.stderr)
+                continue
+            ranking = j["content"][0].get("ranking") or []
+            top = [r for r in ranking if r.get("position") == 1]
+            if not top:
+                print("no P1 for %d" % y, file=sys.stderr)
+                continue
+            champs[str(y)] = normws((top[0].get("driver") or {}).get("name") or "")
+        cache.write_text(json.dumps(champs))
+    for y in sorted(champs):
+        nm = champs[y]
+        canon = CANON_FULL.get(nm, nm)
+        counts[canon] = counts.get(canon, 0) + 1
+        print("%s  %s" % (y, canon), file=sys.stderr)
+    ordered = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    print("{")
+    for nm, n in ordered:
+        print('  "%s": %d,' % (nm, n))
+    print("}")
+
+
 def cmd_test():
     year = datetime.now(timezone.utc).year
     status, j = get("season/ofSeries/" + series_uuid(), {"year": year})
@@ -760,6 +801,8 @@ def main():
         cmd_streak_refresh()
     elif cmd == "picks":
         cmd_picks()
+    elif cmd == "champions":
+        cmd_champions()
     elif cmd in ("streak-pool", "grid-facts"):
         seasons = collect_seasons(1972, now_year - 1)
         if cmd == "streak-pool":
