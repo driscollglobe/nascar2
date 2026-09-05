@@ -512,7 +512,10 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .welcome-box .lineup-logo{width:min(210px,60%);margin:2px auto 18px}
 .welcome-hook{font-family:var(--display);font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:var(--text);margin:0 0 18px}
 .welcome-cards{display:flex;flex-direction:column;gap:10px;margin:0 0 20px;text-align:left}
-.wc-card{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:10px;padding:11px 13px}
+.wc-card{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:10px;padding:11px 13px;width:100%;text-align:left;font-family:var(--body);color:var(--text);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color 120ms,transform 120ms var(--ease)}
+.wc-card:hover{border-color:var(--amber)}
+.wc-card:active{transform:translateY(1px) scale(0.995)}
+.nav-dots{justify-content:center;margin:6px 0 2px}
 .wc-name{font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--amber)}
 .wc-desc{font-size:13.5px;line-height:1.5;color:#cfd6de;margin-top:3px}
 .welcome-cta{display:block;width:100%;font-family:var(--display);font-size:17px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#0e131a;background:var(--amber);border:0;border-radius:12px;padding:15px;cursor:pointer;box-shadow:0 8px 24px rgba(242,229,0,.18)}
@@ -1980,6 +1983,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
     if (App.isDaily && !isPractice && MISSION) {
       var nav = MISSION.buildNav("crossera", { onShare: function (btn) { window.track("share_click", { mode: "crossera" }); copyText(share, btn); } });
       actionKids.unshift(el("button", { class: "btn ghost", text: "Free play a matchup", onClick: function () { newMatchup(); } }));
+      actionKids.push(el("button", { class: "btn ghost", text: "Back to games", onClick: function () { detachKeys(); if (window.__HUB__) window.__HUB__.home(); } }));
       navStack = nav.concat([el("div", { class: "actions" }, actionKids)]);
     } else {
       var primaryBtn = App.isDaily
@@ -2096,6 +2100,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
   window.__CROSSERA_MODE__ = {
     enter: function () {
       refreshServices();
+      if (window.__LINEUP_NAV__) window.__LINEUP_NAV__.setHash("crossera");
       App.orgSeason = null; App.postedDaily = false; App.stats = null; App.restored = false;
       var saved = MISSION ? MISSION.crossDailyForDay(DAY.key()) : null;
       if (saved) restoreDailyResult(saved);
@@ -2335,6 +2340,8 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
   function clearTimers() {
     App.timers.forEach(function (t) { clearInterval(t); });
     App.timers = [];
+    // The rail nav embeds the hub's shared countdown; clear it with our own.
+    if (window.__LINEUP_COUNTDOWN__) window.__LINEUP_COUNTDOWN__.clearAll();
   }
   function topbar() {
     return el("header", { class: "topbar" }, [
@@ -2534,6 +2541,10 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
     }
     if (last) parts.push(scoreCard(last, !race));
     if (weeks.length > 1) parts.push(seasonRows(weeks));
+    var MISSION = window.__LINEUP_MISSION__;
+    if (MISSION && MISSION.buildNav) {
+      parts.push(el("div", { class: "stack", style: "gap:6px;margin-top:12px" }, MISSION.buildNav("picks", { skipShare: true })));
+    }
     parts.push(el("div", { class: "actions", style: "margin-top:10px" }, [
       el("button", { class: "btn ghost", text: "Back to games", onClick: function () { clearTimers(); if (window.__HUB__) window.__HUB__.home(); } }),
     ]));
@@ -2546,21 +2557,22 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
     var weeks = scoredWeeks();
     var total = seasonTotal();
     if (!race) {
-      return { stat: weeks.length ? "Season total: " + total + " pts" : "Playoffs complete", played: false };
+      return { stat: weeks.length ? "Season total: " + total + " pts" : "Playoffs complete", played: false, hasRace: false, railDone: true };
     }
     var p = picksFor(race);
     if (!isLocked(race)) {
       var lockTxt = race.startUtc ? "locks " + fmtET(lockMs(race)) : "locks " + race.raceDate + " 00:00 UTC";
-      return { stat: trackName(race) + " " + lockTxt, played: isComplete(p) };
+      return { stat: trackName(race) + " " + lockTxt, played: isComplete(p), hasRace: true, railDone: isComplete(p) };
     }
     var last = weeks.length ? weeks[weeks.length - 1] : null;
-    if (last) return { stat: "This week: " + last.score.total + " pts · Season: " + total, played: true };
-    return { stat: trackName(race) + " is locked. Results Monday morning.", played: !!p };
+    if (last) return { stat: "This week: " + last.score.total + " pts · Season: " + total, played: true, hasRace: true, railDone: true };
+    return { stat: trackName(race) + " is locked. Results Monday morning.", played: !!p, hasRace: true, railDone: true };
   };
 
   window.__PICKS_MODE__ = {
     enter: function () {
       refreshServices();
+      if (window.__LINEUP_NAV__) window.__LINEUP_NAV__.setHash("picks");
       App.root = document.getElementById("app");
       window.track("game_start", { mode: "picks" });
       render();
@@ -2871,13 +2883,60 @@ function nextMissionMode(justFinished) {
   }
   return null;
 }
-var MODE_LABEL = { grid: "Daily Grid", ladder: "Daily Ladder", crossera: "Cross-Era" };
+var MODE_LABEL = { grid: "Daily Grid", ladder: "Daily Ladder", crossera: "Cross-Era", picks: "Race Picks" };
+// The URL mirrors the current screen (replaceState, no history spam) so a
+// refresh or shared link lands where the player was; editing the hash routes.
+var currentView = null;
+function setViewHash(view) {
+  currentView = view;
+  var h = view === "hub" ? "hub" : MODE_TO_HASH[view];
+  if (!h || location.hash === "#" + h) return;
+  try { history.replaceState(null, "", "#" + h); } catch (e) {}
+}
+window.addEventListener("hashchange", function () {
+  var m = currentHashMode();
+  if (!m || m === currentView) return;
+  if (m === "hub") renderHub();
+  else missionGoto(m);
+});
+window.__LINEUP_NAV__ = { setHash: setViewHash };
 function missionGoto(mode) {
   clearAllCountdowns();
+  clearLadderTimer();
+  if (window.__PICKS_MODE__) window.__PICKS_MODE__.leave();
+  if (window.__CROSSERA_MODE__) window.__CROSSERA_MODE__.leave();
   if (mode === "grid") { lsSet(LS.lastMode, "grid"); renderGrid(); }
   else if (mode === "ladder") { lsSet(LS.lastMode, "streak"); renderStreak("ladder"); }
   else if (mode === "crossera") { lsSet(LS.lastMode, "crossera"); if (window.__CROSSERA_MODE__) window.__CROSSERA_MODE__.enter(); }
+  else if (mode === "picks") { lsSet(LS.lastMode, "picks"); if (window.__PICKS_MODE__) window.__PICKS_MODE__.enter(); }
   else renderHub();
+}
+
+/* ---------------- the movement rail ----------------
+   ONE canonical order between games: Grid, Ladder, Cross-Era, then Race
+   Picks while a pickable race is on the calendar. Every finish sheet builds
+   its navigation from this rail (buildMissionNav), so moving between games
+   reads the same everywhere: dots for today's loop, the next unplayed game
+   as a named primary action, the other unplayed games waiting quietly, and
+   Share taking the primary slot once the loop is done. */
+var RAIL = ["grid", "ladder", "crossera", "picks"];
+var RAIL_CTA = { grid: "Play the Daily Grid", ladder: "Climb the Daily Ladder", crossera: "Play Cross-Era Draft", picks: "Set your Race Picks" };
+function railState() {
+  var s = missionStatus();
+  var pk = window.__PICKS_INFO__ ? window.__PICKS_INFO__() : null;
+  return {
+    done: { grid: s.grid, ladder: s.ladder, crossera: s.crossera, picks: pk ? !!pk.railDone : true },
+    hasPicks: !!(pk && pk.hasRace),
+  };
+}
+function railGames(rs) { return RAIL.filter(function (m) { return m !== "picks" || rs.hasPicks; }); }
+function railNext(justFinished, rs) {
+  var games = railGames(rs);
+  for (var i = 0; i < games.length; i++) {
+    if (games[i] === justFinished) continue;
+    if (!rs.done[games[i]]) return games[i];
+  }
+  return null;
 }
 // Records the Garage Sweep for a day the first time all three are complete.
 // Returns true only on the transition (so a screen can celebrate once).
@@ -2956,15 +3015,24 @@ function buildMissionNav(justFinished, opts) {
       ]),
     ]));
   }
+  // The rail (see above): dots, then the next game by name, then the rest.
+  var rs = railState();
+  var games = railGames(rs);
+  nodes.push(el("div", { class: "mb-dots nav-dots" }, games.map(function (m) {
+    return el("span", { class: "mb-dot" + (rs.done[m] ? " on" : ""), text: MODE_LABEL[m] });
+  })));
+  var next = opts.skipNext ? null : railNext(justFinished, rs);
+  if (next) {
+    nodes.push(el("button", { class: "btn primary pulse", style: "margin-top:6px", text: RAIL_CTA[next], onClick: function () { missionGoto(next); } }));
+  }
+  games.forEach(function (m) {
+    if (m === next || m === justFinished || rs.done[m]) return;
+    nodes.push(el("button", { class: "btn ghost", style: "margin-top:6px", text: MODE_LABEL[m], onClick: function () { missionGoto(m); } }));
+  });
   if (!opts.skipShare && opts.onShare) {
-    var shareBtn = el("button", { class: "btn primary", style: "margin-top:6px", text: "Share" });
+    var shareBtn = el("button", { class: (next ? "btn ghost" : "btn primary pulse"), style: "margin-top:6px", text: "Share" });
     shareBtn.addEventListener("click", function () { opts.onShare(shareBtn); });
     nodes.push(shareBtn);
-  }
-  // Secondary, and only when there is an unplayed daily game left.
-  var next = opts.skipNext ? null : nextMissionMode(justFinished);
-  if (next) {
-    nodes.push(el("button", { class: "btn ghost", style: "margin-top:6px", text: "Play the next one", onClick: function () { missionGoto(next); } }));
   }
   // Offer (never force) allegiance once the player has finished a game and has
   // not chosen a driver yet. A quiet CTA, not an interrupting overlay.
@@ -3062,11 +3130,13 @@ function rulesButton(game) {
    Ladder and Cross-Era overlays still teach at first entry. */
 var WELCOME_SEEN = NS + "welcomeSeen";
 function welcomeSeen() { return lsGet(WELCOME_SEEN) === "1"; }
-function wcCard(name, desc) {
-  return el("div", { class: "wc-card" }, [
+function wcCard(name, desc, onOpen) {
+  var card = el("button", { class: "wc-card" }, [
     el("div", { class: "wc-name", text: name }),
     el("div", { class: "wc-desc", text: desc }),
   ]);
+  card.addEventListener("click", onOpen);
+  return card;
 }
 function showWelcome(reopen) {
   lsSet(WELCOME_SEEN, "1");
@@ -3080,14 +3150,23 @@ function showWelcome(reopen) {
     lsSet(LS.lastMode, "grid");
     if (activeMode !== "grid" || !Grid || Grid.date !== dayKey()) renderGrid();
   });
+  // Each card opens its game directly. The card just taught the rules, so
+  // that game's one-time rules overlay is marked seen to avoid a double teach.
+  function openMode(rulesKey, go) {
+    return function () { markRulesSeen(rulesKey); close(); go(); };
+  }
   var box = el("div", { class: "welcome-box" }, [
     el("div", { html: LINEUP_LOGO_SVG }),
     el("p", { class: "welcome-hook", text: "Daily stock car games built on real results." }),
     el("div", { class: "welcome-cards" }, [
-      wcCard("Daily Grid", "Nine boxes. Name a driver who fits the row and the column. Wrong guesses cost nothing."),
-      wcCard("Daily Ladder", "Pick who has more career Cup wins. Twenty rungs clears the daily. One miss ends the run."),
-      wcCard("Cross-Era Draft", "Sign drivers from any era to beat a real team's season. Tiers are revealed after you decide."),
-      wcCard("Race Picks", "Call the winner and a top five from the playoff field each week. Picks lock at the green flag."),
+      wcCard("Daily Grid", "Nine boxes. Name a driver who fits the row and the column. Wrong guesses cost nothing.",
+        openMode("grid", function () { lsSet(LS.lastMode, "grid"); if (activeMode !== "grid" || !Grid || Grid.date !== dayKey()) renderGrid(); })),
+      wcCard("Daily Ladder", "Pick who has more career Cup wins. Twenty rungs clears the daily. One miss ends the run.",
+        openMode("ladder", function () { lsSet(LS.lastMode, "streak"); renderStreak("ladder"); })),
+      wcCard("Cross-Era Draft", "Sign drivers from any era to beat a real team's season. Tiers are revealed after you decide.",
+        openMode("crossera", function () { lsSet(LS.lastMode, "crossera"); if (window.__CROSSERA_MODE__) window.__CROSSERA_MODE__.enter(); })),
+      wcCard("Race Picks", "Call the winner and a top five from the playoff field each week. Picks lock at the green flag.",
+        openMode("picks", function () { lsSet(LS.lastMode, "picks"); if (window.__PICKS_MODE__) window.__PICKS_MODE__.enter(); })),
     ]),
     cta,
     el("div", { class: "welcome-credit", text: "Data by Motorsport Stats" }),
@@ -3568,6 +3647,7 @@ function goHome() {
 }
 function renderHub() {
   activeMode = null;
+  setViewHash("hub");
   var dk = dayKey();
   var cards = [];
 
@@ -4000,6 +4080,7 @@ function renderGrid(archiveDk) {
   } else {
     var fresh = (!Grid || Grid.date !== dayKey() || Grid.archive || (Grid.dev && !DEV));
     if (fresh) { initGrid(false); GridStats = null; }
+    setViewHash("grid");
     window.track("game_start", { mode: "grid" });
   }
   // If the grid is already done (or in progress), pull stats so rarity and the
@@ -4345,22 +4426,6 @@ function gridResults() {
       ]),
     ])
   );
-  // Finish sheet next steps: hand the player the other two daily games.
-  if (!g.archive && !g.dev) {
-    var msNext = missionStatus();
-    kids.push(el("div", { class: "actions", style: "margin-top:10px" }, [
-      el("button", {
-        class: "btn " + (!msNext.ladder ? "primary pulse" : "ghost"),
-        text: msNext.ladder ? "Ladder played" : "Climb the ladder",
-        onClick: function () { lsSet(LS.lastMode, "streak"); renderStreak("ladder"); },
-      }),
-      el("button", {
-        class: "btn " + (msNext.ladder && !msNext.crossera ? "primary pulse" : "ghost"),
-        text: msNext.crossera ? "Cross-Era played" : "Cross-Era Draft",
-        onClick: function () { lsSet(LS.lastMode, "crossera"); if (window.__CROSSERA_MODE__) window.__CROSSERA_MODE__.enter(); },
-      }),
-    ]));
-  }
   var summ = gridRaritySummary();
   if (summ && !summ.pending) {
     var heroKids = [
@@ -4388,7 +4453,7 @@ function gridResults() {
   // unfinished daily game (or Share when all three are done). Archive plays are
   // outside the daily mission, so they keep their own simple navigation.
   if (!g.archive && !g.dev) {
-    buildMissionNav("grid", { skipShare: true, skipNext: true })
+    buildMissionNav("grid", { skipShare: true })
       .forEach(function (n) { kids.push(n); });
   }
   var navButtons = [
@@ -4663,6 +4728,7 @@ function renderStreak(mode) {
   if (!SPOOL.length) { renderHub(); return; }
   clearLadderTimer();
   activeMode = "streak";
+  setViewHash("ladder");
   mode = mode || "ladder";
   window.track("game_start", { mode: mode === "ladder" ? "streak_ladder" : "streak_free" });
   if (mode === "ladder") {
