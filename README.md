@@ -10,12 +10,15 @@ output matches the committed index.html byte for byte.
 
 ## Weekly refresh
 
-The GitHub Action in .github/workflows/refresh.yml runs every Monday at
-10:00 UTC. It pulls the Race Picks data (playoff schedule, playoff field,
-finishing positions for completed playoff races) and the refreshed Streak
-career win totals from the Motorsport Stats Core API, rebuilds index.html,
-runs the Cross-Era balance sweep as a gate, and pushes index.html and data/
-to main only when something changed. Both pulls fail closed: a completed
+The GitHub Action in .github/workflows/refresh.yml runs twice a week. The
+Monday 10:00 UTC run pulls the Race Picks data (playoff schedule, playoff
+field, finishing positions for completed playoff races) and the refreshed
+Streak career win totals from the Motorsport Stats Core API. The Friday
+16:00 UTC run pulls only the calendar and picks data, so green flag lock
+times that firm up late in the week reach the game before Sunday; it never
+touches the Streak pool. Both runs rebuild index.html, run the Cross-Era
+balance sweep as a gate, and push index.html and data/ to main only when
+something changed. A manual run behaves like Monday and refreshes everything. Both pulls fail closed: a completed
 race with no classification, a thin playoff field, an empty future schedule,
 any Streak win count going down, or an unmatched driver name stops the job
 before anything is written.

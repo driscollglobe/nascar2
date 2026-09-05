@@ -2,12 +2,15 @@ name: Weekly MSS refresh
 
 # Regenerates the MSS-backed datasets every Monday morning UTC (after NASCAR
 # results are final), rebuilds index.html, gates on the Cross-Era sweep, and
-# pushes only when something actually changed. Run it by hand from the Actions
-# tab via workflow_dispatch.
+# pushes only when something actually changed. A second Friday run refreshes
+# the calendar and picks data only (lock times firm up late in the week); the
+# Streak refresh is Monday-only. Run either by hand from the Actions tab via
+# workflow_dispatch (a manual run behaves like Monday and refreshes everything).
 
 on:
   schedule:
     - cron: "0 10 * * 1"
+    - cron: "0 16 * * 5"
   workflow_dispatch:
 
 permissions:
@@ -41,7 +44,8 @@ jobs:
       - name: Pull Race Picks data (fails closed)
         run: python3 scripts/pull_mss.py picks
 
-      - name: Refresh Streak pool (fails closed)
+      - name: Refresh Streak pool (fails closed, Monday and manual runs only)
+        if: github.event.schedule != '0 16 * * 5'
         run: python3 scripts/pull_mss.py streak-refresh --apply
 
       - name: Build index.html

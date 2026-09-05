@@ -636,6 +636,24 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
   function venueKey(raw) { var e = VENUE_CANON[raw]; return e ? e.display : raw; }
   window.__LINEUP_VENUE__ = { table: VENUE_CANON, display: venueDisplay, key: venueKey };
 
+/* =========================================================================
+   Org display aliases (window.__LINEUP_ORG__).
+
+   Same shape and rules as the venue canon: MSS records a team under its
+   historical name, so a renamed org can read stale on current-season
+   surfaces. display is the org's current public name, applied at RENDER
+   TIME ONLY on current-season surfaces (Race Picks); matching, stored data
+   and historical season cards are untouched, so a 2006 Roush Fenway card
+   still reads as its era. Only documented renames of the SAME organization
+   belong here.
+   ========================================================================= */
+  var ORG_ALIAS = {
+    // Roush Fenway Racing -> RFK Racing (2022).
+    "Roush Fenway Racing": "RFK Racing"
+  };
+  function orgDisplay(raw) { return ORG_ALIAS[raw] || raw; }
+  window.__LINEUP_ORG__ = { table: ORG_ALIAS, display: orgDisplay };
+
   // Public game URL, appended to every share string across all three modes.
   // Single source of truth: change this one line to repoint every share.
   window.__LINEUP_URL__ = "https://driscollglobe.github.io/nascar2/";
@@ -2160,6 +2178,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
   var DATA = window.__RACE_PICKS__ || { schedule: [], field: [], results: {} };
   var CANON = window.__LINEUP_CANON__ || { name: function (s) { return String(s); } };
   var VENUE = window.__LINEUP_VENUE__ || { display: function (x) { return x; } };
+  var ORG = window.__LINEUP_ORG__ || { display: function (x) { return x; } };
   var NS = window.__LINEUP_NS__ || "lineupHub:";
   var GAME_URL = window.__LINEUP_URL__ || "";
   function dn(name) { return CANON.name(name); }
@@ -2229,6 +2248,12 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
     return scoredWeeks().reduce(function (a, w) { return a + w.score.total; }, 0);
   }
   function trackName(race) { return VENUE.display(race.track); }
+  // MSS uses generic placeholder names for some races ("NASCAR Cup Series
+  // Race at WWTR"); those read as the track name instead. Real sponsor race
+  // names pass through untouched.
+  function raceDisplay(race) {
+    return /^NASCAR Cup Series/i.test(race.race || "") ? trackName(race) : race.race;
+  }
 
   function fmtET(ms) {
     try {
@@ -2351,11 +2376,12 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
     var lockLine = race.startUtc
       ? "Green flag " + fmtET(lockMs(race))
       : "Green flag time not published yet. Picks lock " + race.raceDate + " at 00:00 UTC.";
+    var title = raceDisplay(race);
     return el("section", { class: "benchmark" }, [
       el("div", { class: "label", text: locked ? "Locked in" : "This week" }),
-      el("div", { class: "org", text: race.race }),
+      el("div", { class: "org", text: title }),
       el("div", { class: "meta" }, [
-        el("span", { class: "muted", style: "font-size:12.5px", text: trackName(race) }),
+        title === trackName(race) ? null : el("span", { class: "muted", style: "font-size:12.5px", text: trackName(race) }),
         el("span", { class: "muted", style: "font-size:12.5px", text: lockLine }),
       ]),
       cd,
@@ -2397,7 +2423,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
         el("span", {}, [
           el("span", { text: dn(f.driver) }),
           el("span", { class: "pr-car", text: "#" + f.car }),
-          el("span", { class: "pr-org", text: f.org }),
+          el("span", { class: "pr-org", text: ORG.display(f.org) }),
         ]),
         el("span", { class: "pr-tag", text: isW ? "WINNER" : isO ? "TOP 5" : "" }),
       ]);
@@ -2439,7 +2465,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
     }).join("");
     var lines = [
       "THE LINEUP: RACE PICKS",
-      week.race.race,
+      raceDisplay(week.race),
       (s.winnerHit ? "Called the winner. " : "") + "This week: " + s.total + (s.total === 1 ? " point." : " points.") + " Season: " + seasonTotal() + ".",
       em,
     ];
@@ -2449,7 +2475,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
   function scoreCard(week, isFinal) {
     var s = week.score;
     var cls = s.winnerHit ? "victory" : s.total > 0 ? "win" : "miss";
-    var sub = week.race.race + ". " + (s.winnerHit ? "You called the winner." : s.total > 0 ? "Points on the board." : "Shut out this week.");
+    var sub = raceDisplay(week.race) + ". " + (s.winnerHit ? "You called the winner." : s.total > 0 ? "Points on the board." : "Shut out this week.");
     var rows = s.rows.map(function (r) {
       return el("div", { class: "ans" + (r.pts > 0 ? " mine" : "") }, [
         el("span", {}, [
@@ -2948,7 +2974,7 @@ var RULES_COPY = {
   grid: "Fill each box with a driver who matches both clues. Each driver can be used once. Guess freely; wrong guesses cost nothing.",
   ladder: "Pick the driver with more career Cup wins. One wrong answer ends your official run. Twenty rungs clears the daily.",
   crossera: "Sign drivers to beat the real team's season win total. Passes are limited. A driver's wins are revealed after you decide.",
-  picks: "Call the race winner, then four more for your top five. Picks lock at the green flag. Ten points for the winner, three for a top five finish, one for sixth through tenth.",
+  picks: "Call the race winner, then four more for your top five. Picks lock at the green flag. Ten points for the winner, three for a top five finish, one for sixth through tenth. A correct winner call also counts as a top five pick, so a perfect week scores 25.",
 };
 var RULES_TITLE = { grid: "Daily Grid", ladder: "Daily Ladder", crossera: "Cross-Era Draft", picks: "Race Picks" };
 function rulesSeen(game) { return lsGet(LS.rulesSeen + game) === "1"; }
