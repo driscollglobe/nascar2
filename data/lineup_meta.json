@@ -1,0 +1,1 @@
+{"name": "The Lineup dataset (Motorsport Stats)", "status": "Generated from the MSS Core API. Win totals derived from real race results.", "metric": "wins (combined real Cup Series race wins in the season)", "tierScale": "LEGEND 13+, CHAMPION 7 to 12, RACE WINNER 4 to 6, CONTENDER 1 to 3, FIELD 0", "source": "motorsport-stats", "generated": "2026-06-21"}
