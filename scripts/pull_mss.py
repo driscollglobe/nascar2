@@ -25,6 +25,10 @@ against data/ and copy it over only after review):
                            complete season)
   org-seasons FROM TO      Cross-Era orgSeasons records (same range)
   streak-pool              Streak pool (career totals, clean 1972+ window)
+  streak-refresh           refresh w for the existing data/streak_pool.json
+                           drivers from race-winner classifications
+                           (1973..current, cached per season); exits 2 if any
+                           driver's count decreases
   grid-facts               Daily Grid facts (drivers, orgs, tracks)
 
 Derivation rules encoded from the shipped build's data-block comments:
@@ -44,11 +48,13 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "build" / "mss_pull"
+CACHE_DIR = ROOT / "build" / "mss_cache"
 
 API_BASE = "https://api.motorsportstats.com/core/2.0.0/"
 NASCAR_CUP_UUID = "0f0f963a-d489-4b9a-8945-71d99bfabd62"  # "NASCAR Cup Series", verified via the series listing
@@ -373,6 +379,163 @@ def build_grid_facts(seasons):
     return {"orgs": orgs, "tracks": tracks, "drivers": out}
 
 
+def season_winners(year, refresh=False):
+    """Winners of every championship race in a season, from race classifications.
+
+    Returns {"year", "races": N_completed, "winners": [{driver, uuid, event}]}.
+    One winner (position 1) per Race session; future/unclassified races are
+    skipped. Cached per season under build/mss_cache/ — pass refresh=True (used
+    for the current year) to refetch instead of trusting the cache.
+    """
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    cache = CACHE_DIR / ("season_winners_%d.json" % year)
+    if cache.exists() and not refresh:
+        return json.loads(cache.read_text())
+    status, season = season_for_year(year)
+    if season is None:
+        raise RuntimeError("no season for %d (HTTP %d)" % (year, status))
+    events = get_all("event/ofSeason/" + season["uuid"])
+
+    def event_winners(ev):
+        out = []
+        seen = set()  # some events list the same session uuid twice
+        for race in get_all("race/ofEvent/" + ev["uuid"]):
+            for sref in race.get("sessions") or []:
+                if sref.get("name") != "Race" or sref["uuid"] in seen:
+                    continue
+                seen.add(sref["uuid"])
+                status, j = get("sessionClassification/ofSession/" + sref["uuid"])
+                if status != 200 or not j:
+                    continue  # not yet run / not yet classified
+                for row in j.get("classificationDetails") or []:
+                    if row_position(row) == 1:
+                        drefs = row.get("drivers") or []
+                        if drefs:
+                            out.append({"driver": drefs[0].get("name"),
+                                        "uuid": drefs[0].get("uuid"),
+                                        "event": ev.get("name")})
+        return out
+
+    winners = []
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        for evw in pool.map(event_winners, events):
+            winners.extend(evw)
+    res = {"year": year, "races": len(winners), "winners": winners}
+    cache.write_text(json.dumps(res))
+    return res
+
+
+# Editor-specified canonical forms, copied from the CANON table in index.html
+# (legal names, nickname forms, missing-period suffixes). Applied to MSS names
+# before mechanical variant matching; never guessed.
+CANON_FULL = {
+    "Dale Arnold Jarrett": "Dale Jarrett",
+    "Joseph Joe Frank Nemechek III": "Joe Nemechek",
+    "Alan Dennis Kulwicki": "Alan Kulwicki",
+    "Darrell Bubba Wallace Jr.": "Bubba Wallace",
+    "Kenneth Dale Irwin Jr.": "Kenny Irwin Jr.",
+    "Dale Earnhardt Jr": "Dale Earnhardt Jr.",
+    "Martin Truex Jr": "Martin Truex Jr.",
+    "Ricky Stenhouse Jr": "Ricky Stenhouse Jr.",
+    "David Ray Boggs": "David Boggs",
+    "Harold Bruce Jacobi": "Harold Jacobi",
+}
+
+
+def normws(s):
+    """Whitespace-normalize the way index.html's normKey does: non-breaking
+    spaces to spaces, runs collapsed, ends trimmed. MSS names carry nbsp."""
+    import re
+    return re.sub(r"\s+", " ", str(s).replace(" ", " ")).strip()
+
+
+CANON_NORM = None
+
+
+def name_variants(name):
+    """Mechanical name variants for matching a pool name to an MSS name:
+    normalized, periods stripped, middle names dropped, suffix normalized.
+    Mirrors the canonical-name rules in index.html (no name is guessed)."""
+    import re
+    global CANON_NORM
+    if CANON_NORM is None:
+        CANON_NORM = {normws(k): v for k, v in CANON_FULL.items()}
+    name = normws(name)
+    name = CANON_NORM.get(name, name)
+    n = re.sub(r"\s+", " ", str(name).replace(".", "")).strip().lower()
+    toks = n.split(" ")
+    sfx = []
+    while len(toks) > 1 and toks[-1] in ("jr", "sr", "ii", "iii", "iv", "v"):
+        sfx.insert(0, toks.pop())
+    out = {n}
+    if toks:
+        base = toks[0] + " " + toks[-1] if len(toks) > 1 else toks[0]
+        out.add((base + " " + " ".join(sfx)).strip())
+        out.add(base)  # middles and suffix dropped
+    return out
+
+
+def cmd_streak_refresh():
+    """Refresh w for the 96 drivers in data/streak_pool.json from MSS race
+    results (1973..current). Legends (data/legend_pool.json) are untouched:
+    official-records data, not MSS. Writes build/mss_pull/streak_pool.json and
+    build/mss_pull/streak_diff.json; never writes data/."""
+    pool = json.loads((ROOT / "data" / "streak_pool.json").read_text())
+    now_year = datetime.now(timezone.utc).year
+
+    wins_by_uuid = {}
+    names_by_uuid = {}
+    for y in range(1973, now_year + 1):
+        res = season_winners(y, refresh=(y == now_year))
+        print("season %d: %d races" % (y, res["races"]), file=sys.stderr)
+        for w in res["winners"]:
+            wins_by_uuid[w["uuid"]] = wins_by_uuid.get(w["uuid"], 0) + 1
+            names_by_uuid[w["uuid"]] = w["driver"]
+
+    # Variant-name index over MSS winners; ambiguous variants are dropped.
+    index = {}
+    for u, nm in names_by_uuid.items():
+        for v in name_variants(nm):
+            if v in index and index[v] != u:
+                index[v] = None  # ambiguous, exact-only
+            else:
+                index.setdefault(v, u)
+
+    updated, diff, missing = [], [], []
+    for d in pool:
+        match = None
+        for v in name_variants(d["n"]):
+            u = index.get(v)
+            if u:
+                match = u
+                break
+        if match is None:
+            missing.append(d["n"])
+            updated.append(dict(d))
+            continue
+        new_w = wins_by_uuid[match]
+        if new_w != d["w"]:
+            diff.append({"driver": d["n"], "mss": names_by_uuid[match], "old": d["w"], "new": new_w})
+        nd = dict(d)
+        nd["w"] = new_w
+        updated.append(nd)
+
+    updated.sort(key=lambda r: (-r["w"], r["n"]))
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    (OUT_DIR / "streak_pool.json").write_text(json.dumps(updated, separators=(",", ":")), encoding="utf-8")
+    (OUT_DIR / "streak_diff.json").write_text(json.dumps({"diff": diff, "unmatched": missing}, indent=2), encoding="utf-8")
+    print("wrote %s (%d drivers)" % (OUT_DIR / "streak_pool.json", len(updated)))
+    print("changes: %d" % len(diff))
+    for c in diff:
+        print("  %-24s %d -> %d" % (c["driver"], c["old"], c["new"]))
+    if missing:
+        print("UNMATCHED (no MSS winner row found): " + ", ".join(missing))
+    decreases = [c for c in diff if c["new"] < c["old"]]
+    if decreases:
+        print("STOP: %d driver(s) decreased; ingest mismatch, do not replace data/." % len(decreases))
+        sys.exit(2)
+
+
 def cmd_test():
     year = datetime.now(timezone.utc).year
     status, j = get("season/ofSeries/" + series_uuid(), {"year": year})
@@ -403,6 +566,8 @@ def main():
             write_out("driver_pool.json", build_driver_pool(seasons))
         else:
             write_out("org_seasons.json", build_org_seasons(seasons))
+    elif cmd == "streak-refresh":
+        cmd_streak_refresh()
     elif cmd in ("streak-pool", "grid-facts"):
         seasons = collect_seasons(1972, now_year - 1)
         if cmd == "streak-pool":

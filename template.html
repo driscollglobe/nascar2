@@ -618,8 +618,8 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
    keys live under this namespace, and the hub migrates launch-build (v2)
    keys forward on boot so no player loses their streak or best.
    ========================================================================= */
-  window.__LINEUP_DATA_VERSION__ = 4;
-  window.__LINEUP_NS__ = "lineupHub:v4:";
+  window.__LINEUP_DATA_VERSION__ = 5;
+  window.__LINEUP_NS__ = "lineupHub:v5:";
 
 /* =========================================================================
    THEME_CALENDAR (editor block, edit like the data blocks).
@@ -2053,7 +2053,7 @@ var ALLEGIANCE = window.__LINEUP_ALLEGIANCE__ || { get: function () { return nul
 // The hub owns the persisted keys, so it runs the launch-build (v2) migration
 // on boot: any v2 key is copied forward to v3 if the v3 key is absent, so no
 // streak, best, or in-progress grid is lost across the version bump.
-var DATA_VERSION = window.__LINEUP_DATA_VERSION__ || 4;
+var DATA_VERSION = window.__LINEUP_DATA_VERSION__ || 5;
 var NS = window.__LINEUP_NS__ || ("lineupHub:v" + DATA_VERSION + ":");
 var LS = {
   grid: NS + "grid:",               // + UTC day key
@@ -2105,13 +2105,13 @@ function gridPlanForDay(dk) {
 }
 
 // One-time forward migration of older-namespace keys. Copies any key from a
-// prior version to its v4 equivalent when the v4 key is absent, newest source
+// prior version to its v5 equivalent when the v5 key is absent, newest source
 // first so nothing is lost and nothing older overwrites something newer. Covers
 // v2 and v3 in one pass, so a device on any prior build migrates cleanly.
 (function migrateStorage() {
   try {
     if (!window.localStorage) return;
-    ["lineupHub:v3:", "lineupHub:v2:"].forEach(function (oldPrefix) {
+    ["lineupHub:v4:", "lineupHub:v3:", "lineupHub:v2:"].forEach(function (oldPrefix) {
       var keys = [];
       for (var i = 0; i < localStorage.length; i++) {
         var k = localStorage.key(i);
