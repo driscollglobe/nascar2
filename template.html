@@ -3029,7 +3029,7 @@ function rulesButton(game) {
 }
 
 /* ---------------- first-run welcome (Two Seats construction) ----------------
-   Wordmark, one line on what the hub is, one card per daily mode, one amber
+   Wordmark, one line on what the hub is, one card per game mode, one amber
    CTA into Today's Game. Seen flag lives in the lineupHub namespace. The
    welcome covers the Grid rules, so it also marks that overlay seen; the
    Ladder and Cross-Era overlays still teach at first entry. */
@@ -3060,6 +3060,7 @@ function showWelcome(reopen) {
       wcCard("Daily Grid", "Nine boxes. Name a driver who fits the row and the column. Wrong guesses cost nothing."),
       wcCard("Daily Ladder", "Pick who has more career Cup wins. Twenty rungs clears the daily. One miss ends the run."),
       wcCard("Cross-Era Draft", "Sign drivers from any era to beat a real team's season. Tiers are revealed after you decide."),
+      wcCard("Race Picks", "Call the winner and a top five from the playoff field each week. Picks lock at the green flag."),
     ]),
     cta,
     el("div", { class: "welcome-credit", text: "Data by Motorsport Stats" }),
