@@ -12,7 +12,7 @@
 :root {
   --bg: #0d1117; --panel: #161c24; --panel2: #1d2530; --raised: #222c38;
   --line: #28323f; --line2: #34404f;
-  --text: #eef2f6; --muted: #8a97a8; --faint: #5c6776;
+  --text: #eef2f6; --muted: #97a3b3; --faint: #728092;
   --amber: #f2e500; --amber2: #fff44d; --green: #37d99a; --red: #ff5d6c; --cyan: #3fd8e2;
   --display: "Barlow Condensed", "Oswald", "Arial Narrow", system-ui, sans-serif;
   --body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -72,7 +72,7 @@ body {
   background: linear-gradient(180deg, var(--panel2), var(--panel));
   border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-top: 6px;
 }
-.benchmark .label { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.benchmark .label { font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .benchmark .org { font-family: var(--display); font-weight: 700; font-size: 26px; line-height: 1.05; margin: 4px 0 2px; }
 .benchmark .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
 
@@ -100,7 +100,7 @@ body {
    has no empty bordered gap. */
 .card.revealed .hide { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
 .card .hide .q { font-family: var(--display); font-weight: 700; font-size: 34px; color: var(--faint); }
-.card .hide .k { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); max-width: 150px; text-align: right; }
+.card .hide .k { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); max-width: 150px; text-align: right; }
 .card .tag.team { color: var(--muted); border-color: var(--line2); font-size: 11px; }
 .card.dealing { animation: deal var(--deal-ms) var(--ease); }
 @keyframes deal { from { opacity: 0; transform: translateY(26px) rotate(-3deg) scale(0.94); } to { opacity: 1; transform: none; } }
@@ -116,7 +116,7 @@ body {
 }
 .lseat.open { border-style: dashed; }
 .lseat.filled { border-color: var(--line2); background: var(--panel2); animation: deal 240ms var(--ease); }
-.lseat-n { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 12px; color: var(--muted); }
+.lseat-n { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 12.5px; color: var(--muted); }
 .lseat-open { font-size: 12px; color: var(--faint); }
 .lseat-nm { font-family: var(--display); font-weight: 700; font-size: 18px; }
 .lseat-yr { font-family: var(--display); font-weight: 600; font-size: 13px; color: var(--cyan); margin-left: 6px; }
@@ -125,7 +125,7 @@ body {
 
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 6px 0 8px; }
 .actions .btn { padding: 18px; font-size: 21px; }
-.hintline { text-align: center; font-size: 12.5px; color: var(--faint); margin: 2px 0 12px; min-height: 16px; }
+.hintline { text-align: center; font-size: 13px; color: var(--faint); margin: 2px 0 12px; min-height: 16px; }
 kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); border: 1px solid var(--line2); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; color: var(--muted); }
 
 .banner { border-radius: var(--radius); padding: 18px; text-align: center; margin: 8px 0; border: 1px solid var(--line2); }
@@ -148,7 +148,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .dynasty .head b { color: var(--text); }
 
 .lede { color: var(--muted); font-size: 14.5px; margin: 10px 0; }
-.foot { margin-top: auto; padding: 14px 0; color: var(--faint); font-size: 11.5px; text-align: center; }
+.foot { margin-top: auto; padding: 14px 0; color: var(--faint); font-size: 12.5px; text-align: center; }
 
 @media (min-width: 520px) { .card { max-width: 340px; } }
 
@@ -158,8 +158,8 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .vs-top { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .vs-top.you { align-items: flex-start; text-align: left; }
 .vs-top.them { align-items: flex-end; text-align: right; }
-.vs-top .lbl { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-.vs-top .vs-cap { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); margin-top: 2px; }
+.vs-top .lbl { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.vs-top .vs-cap { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); margin-top: 2px; }
 .vs-top .tot { font-family: var(--display); font-weight: 700; font-size: 52px; line-height: 0.85; }
 .vs-top.you .tot { color: var(--amber); transition: color 200ms; }
 .vs-top.them .tot { color: var(--text); }
@@ -206,7 +206,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .sweep .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 8px 0; }
 .sweep .stat { background: var(--panel2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px; }
 .sweep .stat .v { font-family: var(--display); font-weight: 700; font-size: 28px; line-height: 1; }
-.sweep .stat .k { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+.sweep .stat .k { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
 .sweep .verdict-line { font-size: 13.5px; color: var(--text); margin-top: 8px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--panel2); border: 1px solid var(--line); }
 .sweep .verdict-line.tense { border-color: var(--green); }
 .sweep .verdict-line.trivial { border-color: var(--red); }
@@ -248,7 +248,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .gcell.ok { border-color: var(--green); background: rgba(55, 217, 154, 0.10); cursor: default; }
 .gcell.dead { opacity: 0.45; cursor: default; }
 .gcell .gc-nm { font-family: var(--display); font-weight: 700; font-size: 14.5px; line-height: 1.05; text-align: center; }
-.gcell .gc-r { font-size: 11px; color: var(--muted); }
+.gcell .gc-r { font-size: 12px; color: var(--muted); }
 .gc-plus { font-family: var(--display); font-weight: 700; font-size: 26px; color: var(--faint); }
 .gstatus { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 0; }
 .gpanel { background: var(--panel); border: 1px solid var(--line2); border-radius: var(--radius); padding: 14px; margin: 8px 0; }
@@ -475,7 +475,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 }
 .pickrow:hover { border-color: var(--line2); }
 .pickrow .pr-car { color: var(--faint); font-size: 12px; margin-left: 6px; }
-.pickrow .pr-org { display: block; color: var(--muted); font-size: 11.5px; }
+.pickrow .pr-org { display: block; color: var(--muted); font-size: 12.5px; }
 .pickrow .pr-tag { font-family: var(--display); font-size: 12px; letter-spacing: 0.08em; white-space: nowrap; }
 .pickrow.win { border-color: var(--amber); background: linear-gradient(180deg, rgba(242, 229, 0, 0.1), var(--panel)); }
 .pickrow.win .pr-tag { color: var(--amber); }
@@ -502,7 +502,7 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .ghead2{display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px 2px 8px}
 .brandlogo{height:20px;width:auto;display:block;color:var(--text)}
 .presents{font-family:var(--body);font-size:14px;line-height:1;color:var(--muted);letter-spacing:.02em;margin-top:9px}
-.lineup-logo{display:block;height:auto;width:min(250px,64%);margin-top:14px}
+.lineup-logo{display:block;height:auto;width:min(250px,64%);margin:14px auto 0}
 .kick{font-family:var(--display);font-size:12px;letter-spacing:.26em;color:var(--amber);text-transform:uppercase;font-weight:700;margin-top:16px}
 .welcome-box .lineup-logo{margin-top:0}
 
@@ -515,12 +515,20 @@ kbd { font-family: var(--body); font-size: 11px; background: var(--panel2); bord
 .wc-card{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:10px;padding:11px 13px;width:100%;text-align:left;font-family:var(--body);color:var(--text);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color 120ms,transform 120ms var(--ease)}
 .wc-card:hover{border-color:var(--amber)}
 .wc-card:active{transform:translateY(1px) scale(0.995)}
+.wc-start{font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--amber);margin:2px 0 8px}
+.wc-or{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:18px 0 10px}
 .nav-dots{justify-content:center;margin:6px 0 2px}
+/* laptop: the phone-first 460px column relaxes; layouts are fluid so nothing
+   else changes. The welcome matches Two Seats' desktop width. */
+@media (min-width: 768px){
+  :root{ --maxw: 560px; }
+  .welcome-box{ max-width: 540px; }
+}
 .wc-name{font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--amber)}
-.wc-desc{font-size:13.5px;line-height:1.5;color:#cfd6de;margin-top:3px}
+.wc-desc{font-size:14px;line-height:1.5;color:#cfd6de;margin-top:3px}
 .welcome-cta{display:block;width:100%;font-family:var(--display);font-size:17px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#0e131a;background:var(--amber);border:0;border-radius:12px;padding:15px;cursor:pointer;box-shadow:0 8px 24px rgba(242,229,0,.18)}
 .welcome-cta:hover{background:var(--amber2)}
-.welcome-credit{font-family:var(--display);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-top:14px}
+.welcome-credit{font-family:var(--display);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-top:14px}
 
 /* cross-era card, Two Seats card type scale */
 .card .body{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center}
@@ -2632,7 +2640,7 @@ var MOTORSPORT_LOGO_SVG =
 // three staggered grid bars, the starting-lineup motif. Transparent
 // background; sized by context via the .lineup-logo class.
 var LINEUP_LOGO_SVG =
-  '<svg class="lineup-logo" viewBox="0 0 452 112" role="img" aria-label="The Lineup">' +
+  '<svg class="lineup-logo" viewBox="0 0 356 120" role="img" aria-label="The Lineup">' +
   '<circle cx="56" cy="56" r="54" fill="var(--amber)"/>' +
   '<circle cx="56" cy="56" r="46" fill="none" stroke="#14110a" stroke-width="5"/>' +
   '<g transform="skewX(-14)"><rect x="44" y="34" width="38" height="11" rx="2.5" fill="#14110a"/>' +
@@ -3158,6 +3166,9 @@ function showWelcome(reopen) {
   var box = el("div", { class: "welcome-box" }, [
     el("div", { html: LINEUP_LOGO_SVG }),
     el("p", { class: "welcome-hook", text: "Daily stock car games built on real results." }),
+    el("div", { class: "wc-start", text: "Start here" }),
+    cta,
+    el("div", { class: "wc-or", text: "Or pick your game" }),
     el("div", { class: "welcome-cards" }, [
       wcCard("Daily Grid", "Nine boxes. Name a driver who fits the row and the column. Wrong guesses cost nothing.",
         openMode("grid", function () { lsSet(LS.lastMode, "grid"); if (activeMode !== "grid" || !Grid || Grid.date !== dayKey()) renderGrid(); })),
@@ -3168,7 +3179,6 @@ function showWelcome(reopen) {
       wcCard("Race Picks", "Call the winner and a top five from the playoff field each week. Picks lock at the green flag.",
         openMode("picks", function () { lsSet(LS.lastMode, "picks"); if (window.__PICKS_MODE__) window.__PICKS_MODE__.enter(); })),
     ]),
-    cta,
     el("div", { class: "welcome-credit", text: "Data by Motorsport Stats" }),
   ]);
   overlay.appendChild(box);
